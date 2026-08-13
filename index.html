@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stack — Study Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a0a0a; --bg-glass: rgba(40,10,10,0.55); --bg-card: rgba(60,15,15,0.6);
+    --accent: #ff4d4d; --accent-glow: rgba(255,77,77,0.35); --text: #f5e6e6; --text-dim: #c9a0a0;
+    --border: rgba(255,77,77,0.25); --progress-track: rgba(255,77,77,0.15);
+    --shadow: 0 8px 32px rgba(0,0,0,0.5); --font-timer: 'Anton',sans-serif; --font-body: 'Inter',sans-serif;
+    --green: #4ade80; --green-glow: rgba(74,222,128,0.4); --orange: #fb923c;
+  }
+  [data-theme="light"] {
+    --bg: #f5efe6; --bg-glass: rgba(230,220,205,0.65); --bg-card: rgba(220,210,195,0.7);
+    --accent: #b83b3b; --accent-glow: rgba(184,59,59,0.25); --text: #3d1f1f; --text-dim: #7a5555;
+    --border: rgba(184,59,59,0.3); --progress-track: rgba(184,59,59,0.15);
+    --shadow: 0 8px 32px rgba(0,0,0,0.12); --green: #16a34a; --green-glow: rgba(22,163,74,0.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:background 0.5s, color 0.5s; overflow-x:hidden; overflow-y:auto; position:relative; }
+  .ambient { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .ambient .dot { position:absolute; border-radius:50%; background:var(--accent); opacity:0.25; animation:floatDot 10s infinite ease-in-out; }
+  @keyframes floatDot { 0%,100%{transform:translateY(0) scale(1); opacity:0.15} 50%{transform:translateY(-60px) scale(1.4); opacity:0.4} }
+  .ambient .orb { position:absolute; border-radius:50%; background:radial-gradient(circle,var(--accent) 0%,transparent 70%); opacity:0.12; filter:blur(20px); animation:driftOrb 20s infinite ease-in-out alternate; }
+  @keyframes driftOrb { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-40px) scale(1.2)} 66%{transform:translate(-20px,20px) scale(0.9)} 100%{transform:translate(10px,-10px) scale(1.1)} }
+  .ambient .blob { position:absolute; width:300px; height:300px; border-radius:50%; background:var(--accent); opacity:0.06; filter:blur(80px); animation:blobMove 25s infinite ease-in-out; }
+  @keyframes blobMove { 0%,100%{transform:translate(0,0) scale(1)} 25%{transform:translate(100px,-80px) scale(1.3)} 50%{transform:translate(-60px,60px) scale(0.8)} 75%{transform:translate(40px,40px) scale(1.1)} }
+  .brand-top-right { position:fixed; top:1.5rem; right:1.5rem; font-size:0.7rem; letter-spacing:0.5em; text-transform:uppercase; color:var(--text-dim); font-weight:200; z-index:10; opacity:0.6; pointer-events:none; }
+  .welcome-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.7); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; padding:1.5rem; opacity:0; pointer-events:none; transition:opacity 0.4s; }
+  .welcome-overlay.open { opacity:1; pointer-events:all; }
+  .welcome-card { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:2.2rem 2rem; max-width:460px; width:100%; box-shadow:var(--shadow); transform:translateY(20px); transition:transform 0.4s; max-height:90vh; overflow-y:auto; }
+  .welcome-overlay.open .welcome-card { transform:translateY(0); }
+  .welcome-card h1 { font-family:var(--font-timer); font-size:2.2rem; letter-spacing:0.05em; text-align:center; margin-bottom:0.3rem; color:var(--text); }
+  .welcome-card .tagline { text-align:center; font-size:0.85rem; color:var(--text-dim); margin-bottom:1.5rem; font-weight:300; }
+  .welcome-bullets { list-style:none; margin-bottom:1.8rem; }
+  .welcome-bullets li { font-size:0.82rem; color:var(--text-dim); padding:0.35rem 0; padding-left:1.2rem; position:relative; line-height:1.5; }
+  .welcome-bullets li::before { content:'\203A'; position:absolute; left:0; color:var(--accent); font-weight:600; }
+  .welcome-setup { background:var(--bg-glass); border:1px solid var(--border); border-radius:14px; padding:1.2rem; margin-bottom:1.5rem; }
+  .welcome-setup h3 { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-dim); margin-bottom:1rem; text-align:center; }
+  .setup-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; }
+  .setup-row label { font-size:0.82rem; color:var(--text); font-weight:500; }
+  .setup-row input { width:130px; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--text); padding:0.4rem 0.6rem; font-family:var(--font-body); font-size:0.85rem; outline:none; text-align:right; }
+  .setup-row input:focus { border-color:var(--accent); }
+  .setup-row input[type="date"] { text-align:center; font-size:0.8rem; }
+  .welcome-setup .btn-main { width:100%; margin-top:0.5rem; }
+  .welcome-setup .btn-ghost { width:100%; margin-top:0.6rem; background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:0.7rem; border-radius:50px; font-family:var(--font-body); font-weight:600; font-size:0.85rem; cursor:pointer; transition:all 0.2s; }
+  .welcome-setup .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+  .welcome-credit { font-size:0.78rem; color:var(--text-dim); text-align:center; line-height:1.5; margin-bottom:1.2rem; font-style:italic; }
+  .welcome-donate { text-align:center; }
+  .welcome-donate > p { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:0.6rem; }
+  .donate-links { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; }
+  .donate-placeholder { font-size:0.72rem; color:var(--text-dim); text-decoration:none; padding:0.35rem 0.8rem; border:1px solid var(--border); border-radius:50px; opacity:0.7; transition:all 0.2s; cursor:default; }
+  .donate-placeholder:hover { opacity:1; border-color:var(--accent); color:var(--accent); }
+  .daily-goal-widget { position:fixed; top:1.5rem; left:1.5rem; z-index:10; width:240px; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:1rem 1.1rem; backdrop-filter:blur(14px); box-shadow:var(--shadow); transition:all 0.3s; }
+  .daily-goal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem; }
+  .daily-goal-header span:first-child { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); font-weight:600; }
+  .daily-goal-header span:last-child { font-size:0.85rem; color:var(--accent); font-weight:700; }
+  .daily-goal-track { display:flex; width:100%; height:6px; background:var(--progress-track); border-radius:3px; overflow:visible; position:relative; }
+  .daily-goal-red { height:100%; background:var(--accent); border-radius:3px 0 0 3px; transition:width 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow:0 0 6px var(--accent-glow); }
+  .daily-goal-red.full { border-radius:3px; }
+  .daily-goal-green { height:100%; background:var(--green); border-radius:0 3px 3px 0; transition:width 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow:0 0 10px var(--green-glow); }
+  .daily-goal-sub { font-size:0.72rem; color:var(--text-dim); margin-top:0.5rem; text-align:center; }
+  .daily-goal-sub .over { color:var(--green); font-weight:600; }
+  .container { position:relative; z-index:1; width:100%; max-width:900px; padding:2rem; display:flex; flex-direction:column; align-items:center; gap:1.8rem; }
+  .quote-box { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.25rem 1.5rem; text-align:center; backdrop-filter:blur(12px); box-shadow:var(--shadow); min-height:80px; display:flex; flex-direction:column; justify-content:center; gap:0.5rem; width:100%; max-width:600px; transition:all 0.5s; }
+  .quote-text { font-size:1rem; font-style:italic; color:var(--text); line-height:1.5; transition:opacity 0.3s; }
+  .quote-author { font-size:0.8rem; color:var(--text-dim); font-weight:500; transition:opacity 0.3s; }
+  .timer-display { font-family:var(--font-timer); font-size:clamp(7rem,18vw,13rem); line-height:0.95; letter-spacing:0.06em; color:var(--text); text-shadow:0 0 50px var(--accent-glow); transition:all 0.3s; user-select:none; text-align:center; width:100%; }
+  .timer-display.running { text-shadow:0 0 70px var(--accent-glow), 0 0 140px var(--accent-glow); }
+  .timer-display.warning { color:var(--orange); text-shadow:0 0 50px rgba(251,146,60,0.4); }
+  .timer-display.finished { color:var(--green); text-shadow:0 0 60px var(--green-glow); animation:finishPulse 1s ease-in-out 3; }
+  @keyframes finishPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+  .timer-sub { font-size:0.85rem; color:var(--text-dim); letter-spacing:0.12em; text-transform:uppercase; min-height:1.4rem; text-align:center; }
+  .countdown-setup { display:flex; align-items:center; gap:0.4rem; justify-content:center; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:0.6rem 1rem; }
+  .countdown-setup input { width:52px; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--text); text-align:center; padding:0.35rem; font-family:var(--font-timer); font-size:1.3rem; outline:none; transition:border-color 0.2s; }
+  .countdown-setup input:focus { border-color:var(--accent); }
+  .countdown-setup span { color:var(--text-dim); font-weight:600; font-size:1.1rem; }
+  .countdown-setup label { font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; text-align:center; display:block; margin-top:0.15rem; }
+  .cd-input-wrap { display:flex; flex-direction:column; align-items:center; }
+  .mode-selector { display:flex; gap:0.3rem; background:var(--bg-card); border:1px solid var(--border); border-radius:50px; padding:0.3rem; backdrop-filter:blur(8px); }
+  .mode-btn { background:transparent; border:none; color:var(--text-dim); padding:0.45rem 1.1rem; border-radius:50px; font-size:0.78rem; font-weight:500; font-family:var(--font-body); cursor:pointer; transition:all 0.25s; letter-spacing:0.03em; }
+  .mode-btn:hover { color:var(--text); }
+  .mode-btn.active { background:var(--accent); color:#fff; box-shadow:0 2px 12px var(--accent-glow); }
+  .mode-btn { position:relative; }
+  .mode-btn::after {
+    content:attr(data-tooltip); position:absolute; bottom:calc(100% + 11px); left:50%;
+    transform:translateX(-50%) translateY(4px); background:var(--bg-card); border:1px solid var(--border);
+    color:var(--text); font-size:0.68rem; font-weight:400; letter-spacing:normal; line-height:1.3;
+    padding:0.5rem 0.7rem; border-radius:8px; width:max-content; max-width:190px; text-align:center; box-shadow:var(--shadow);
+    opacity:0; pointer-events:none; transition:opacity 0.15s ease, transform 0.15s ease; z-index:20;
+  }
+  .mode-btn::before {
+    content:''; position:absolute; bottom:calc(100% + 5px); left:50%; transform:translateX(-50%) translateY(4px);
+    border:5px solid transparent; border-top-color:var(--bg-card); opacity:0; pointer-events:none;
+    transition:opacity 0.15s ease, transform 0.15s ease; z-index:21;
+  }
+  .mode-btn:hover::after, .mode-btn:hover::before { opacity:1; transform:translateX(-50%) translateY(0); }
+  @media (hover:none) { .mode-btn::after, .mode-btn::before { display:none; } }
+  .controls { display:flex; gap:1.2rem; align-items:center; }
+  .btn { border:none; outline:none; cursor:pointer; font-family:var(--font-body); font-weight:600; transition:all 0.25s; display:flex; align-items:center; justify-content:center; }
+  .btn-main { background:var(--accent); color:#fff; padding:1rem 3.5rem; border-radius:50px; font-size:1.1rem; letter-spacing:0.08em; box-shadow:0 4px 24px var(--accent-glow); min-width:160px; }
+  .btn-main:hover { transform:translateY(-2px); box-shadow:0 6px 32px var(--accent-glow); }
+  .btn-main:active { transform:translateY(0); }
+  .btn-icon { width:52px; height:52px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); color:var(--text); font-size:1.2rem; }
+  .btn-icon:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .progress-section { width:100%; max-width:500px; display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem; }
+  .progress-section.no-goal .progress-bar-wrap { display:none; }
+  .progress-section.no-goal .progress-header span:last-child { display:none; }
+  .progress-section.no-goal .total-time { font-size:1.3rem; margin-top:0.5rem; }
+  .progress-section.no-goal .total-time span { font-size:1.5rem; }
+  .progress-header { display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; }
+  .progress-bar-wrap { width:100%; height:6px; background:var(--progress-track); border-radius:3px; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:var(--accent); border-radius:3px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); box-shadow:0 0 10px var(--accent-glow); }
+  .total-time { font-size:0.9rem; color:var(--text-dim); text-align:center; margin-top:0.25rem; }
+  .total-time span { color:var(--accent); font-weight:600; }
+  .settings-btn { position:fixed; bottom:1.5rem; right:1.5rem; width:44px; height:44px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; backdrop-filter:blur(8px); transition:all 0.3s; z-index:10; }
+  .settings-btn:hover { background:var(--accent); color:#fff; transform:rotate(30deg); }
+  .settings-panel { position:fixed; bottom:4.5rem; right:1.5rem; background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.25rem; width:260px; backdrop-filter:blur(16px); box-shadow:var(--shadow); transform:translateY(10px); opacity:0; pointer-events:none; transition:all 0.3s; z-index:10; }
+  .settings-panel.open { transform:translateY(0); opacity:1; pointer-events:all; }
+  .settings-panel h3 { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-bottom:1rem; }
+  .setting-row { display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid var(--border); }
+  .setting-row:last-child { border-bottom:none; }
+  .setting-label { font-size:0.85rem; color:var(--text); }
+  .setting-input { width:80px; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0.25rem 0.4rem; font-family:var(--font-body); font-size:0.8rem; text-align:right; outline:none; }
+  .setting-input:focus { border-color:var(--accent); }
+  .setting-input[type="date"] { width:120px; text-align:center; font-size:0.75rem; }
+  .toggle { width:40px; height:22px; background:var(--progress-track); border-radius:11px; position:relative; cursor:pointer; transition:background 0.3s; }
+  .toggle::after { content:''; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:2px; left:2px; transition:transform 0.3s; }
+  .toggle.active { background:var(--accent); }
+  .toggle.active::after { transform:translateX(18px); }
+  .btn-small { background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:0.3rem 0.7rem; border-radius:6px; font-size:0.75rem; font-family:var(--font-body); font-weight:500; cursor:pointer; transition:all 0.2s; }
+  .btn-small:hover { border-color:var(--accent); color:var(--accent); }
+  .contact-panel { margin-top:0.5rem; padding:0.6rem; background:var(--bg-glass); border-radius:8px; text-align:center; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
+  .contact-panel p { font-size:0.78rem; color:var(--text); font-family:var(--font-body); }
+  .danger-btn { width:100%; margin-top:0.75rem; padding:0.6rem; border-radius:10px; background:transparent; border:1px solid var(--border); color:var(--accent); font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .danger-btn:hover { background:var(--accent); color:#fff; }
+  .donate-row { margin-top:0.5rem; display:flex; flex-direction:column; gap:0.4rem; }
+  .donate-row span { font-size:0.72rem; color:var(--text-dim); text-decoration:none; padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:6px; text-align:center; opacity:0.7; transition:all 0.2s; cursor:default; }
+  .donate-row span:hover { opacity:1; border-color:var(--accent); color:var(--accent); }
+  .hidden { display:none !important; }
+  @media (max-width:600px) {
+    .container { padding:1.2rem 1rem; gap:1.3rem; }
+    .daily-goal-widget { width:150px; padding:0.7rem; top:1rem; left:1rem; }
+    .daily-goal-header span:first-child { font-size:0.62rem; }
+    .daily-goal-header span:last-child { font-size:0.78rem; }
+    .daily-goal-sub { font-size:0.62rem; }
+    .mode-btn { padding:0.4rem 0.75rem; font-size:0.72rem; }
+    .mode-btn::after { display:none; }
+    .mode-btn::before { display:none; }
+    .countdown-setup input { width:44px; font-size:1.1rem; }
+    .brand-top-right { font-size:0.58rem; letter-spacing:0.3em; top:1rem; right:1rem; }
+    .welcome-card { padding:1.5rem 1.2rem; }
+    .setup-row input { width:100px; font-size:0.8rem; }
+    .timer-display { font-size:clamp(2.6rem, 16vw, 6rem); letter-spacing:0.03em; }
+    .controls { gap:0.6rem; flex-wrap:wrap; justify-content:center; }
+    .btn-main { padding:0.85rem 2rem; font-size:0.95rem; min-width:0; flex:0 1 auto; }
+    .btn-icon { width:46px; height:46px; font-size:1rem; }
+    .settings-panel { width:calc(100vw - 2rem); max-width:260px; right:1rem; bottom:4rem; }
+    .settings-btn { bottom:1rem; right:1rem; }
+  }
+  @media (max-width:360px) {
+    .timer-display { font-size:clamp(2.2rem, 15vw, 5rem); }
+    .btn-main { padding:0.8rem 1.5rem; font-size:0.88rem; }
+    .daily-goal-widget { width:130px; }
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="ambient" id="ambient"></div>
+<div class="brand-top-right">Stack</div>
+
+<div class="welcome-overlay" id="welcomeOverlay">
+  <div class="welcome-card">
+    <h1>Stack</h1>
+    <p class="tagline">A study timer that keeps you accountable.</p>
+    <ul class="welcome-bullets">
+      <li>Track your study sessions with a live timer</li>
+      <li>Set a goal and deadline to see daily targets</li>
+      <li>Use Question mode to time individual attempts</li>
+      <li>Use Timer mode for countdown-based practice</li>
+      <li>Everything saves automatically to your browser</li>
+    </ul>
+    <div class="welcome-setup">
+      <h3>Set Your Goal</h3>
+      <div class="setup-row">
+        <label>Goal (hours)</label>
+        <input type="number" id="setupGoal" value="100" min="1">
+      </div>
+      <div class="setup-row">
+        <label>Deadline</label>
+        <input type="date" id="setupDeadline" value="2026-09-05">
+      </div>
+      <button class="btn btn-main" id="setupStartBtn">Start Studying</button>
+      <button class="btn btn-ghost" id="setupSkipBtn">Start Without Goal</button>
+    </div>
+    <p class="welcome-credit">Made by Ammar, an ACCA student building tools to study more consistently.</p>
+    <div class="welcome-donate">
+      <p>Support me by donating</p>
+      <div class="donate-links">
+        <span class="donate-placeholder">GitHub Sponsors (coming soon)</span>
+        <button class="btn-small" id="welcomeDonateBtn" style="font-size:0.72rem;">Donate via Crypto</button>
+      </div>
+      <div class="contact-panel hidden" id="welcomeDonatePanel" style="margin-top:0.6rem; flex-direction:column; gap:0.4rem; align-items:stretch;">
+        <div style="font-size:0.72rem; color:var(--text-dim); text-align:left; line-height:1.5;">
+          <p style="margin-bottom:0.3rem; color:var(--text); font-weight:600;">⚡ Donate via Crypto</p>
+          <p style="margin-bottom:0.2rem;"><strong>Binance Pay</strong> (Binance Users Only): <span style="color:var(--accent); font-family:monospace;">578153159</span></p>
+          <p style="margin-bottom:0.2rem;"><strong>USDT – BEP20</strong> (BNB Smart Chain):</p>
+          <p style="font-family:monospace; font-size:0.68rem; word-break:break-all; color:var(--accent); margin-bottom:0.3rem;">0x22934a815EC095405bca01fB82D1131a02959F0A</p>
+          <p style="font-size:0.65rem; color:var(--orange); border:1px solid var(--border); border-radius:6px; padding:0.4rem; background:var(--bg-glass);">⚠️ <strong>Crucial:</strong> Always send USDT on <strong>BNB Smart Chain (BEP20)</strong> only. Sending via TRON (TRC20) or any other network to this address will result in <strong>permanent loss</strong> of funds.</p>
+        </div>
+        <div style="display:flex; gap:0.4rem;">
+          <button class="btn-small" id="copyBinanceBtn" style="flex:1;">Copy Binance ID</button>
+          <button class="btn-small" id="copyWalletBtn" style="flex:1;">Copy Wallet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="welcome-overlay" id="goalHitOverlay">
+  <div class="welcome-card" style="max-width:400px;">
+    <h1 id="goalHitTitle" style="font-size:1.6rem;">Goal Reached!</h1>
+    <p class="tagline" id="goalHitMessage">You hit your target. Nice work.</p>
+    <div class="welcome-setup">
+      <h3>What next?</h3>
+      <div class="setup-row">
+        <label>New goal (hours)</label>
+        <input type="number" id="goalHitNewHours" min="1">
+      </div>
+      <div class="setup-row">
+        <label>New deadline</label>
+        <input type="date" id="goalHitNewDeadline">
+      </div>
+      <button class="btn btn-main" id="goalHitSaveBtn">Set New Target</button>
+      <button class="btn btn-ghost" id="goalHitContinueBtn">Keep Logging As Is</button>
+    </div>
+  </div>
+</div>
+
+<div class="daily-goal-widget" id="dailyGoalWidget">
+  <div class="daily-goal-header">
+    <span id="dailyGoalTitle">Today's Goal</span>
+    <span id="dailyGoalValue">0.0h</span>
+  </div>
+  <div class="daily-goal-track" id="dailyGoalTrack">
+    <div class="daily-goal-red" id="dailyGoalRed" style="width:0%"></div>
+    <div class="daily-goal-green" id="dailyGoalGreen" style="width:0%"></div>
+  </div>
+  <div class="daily-goal-sub" id="dailyGoalSub">0.0 / 0.0 hrs</div>
+</div>
+
+<div class="container">
+  <div class="quote-box" id="quoteBox">
+    <div class="quote-text" id="quoteText">"The secret of getting ahead is getting started."</div>
+    <div class="quote-author" id="quoteAuthor">— Mark Twain</div>
+  </div>
+
+  <div class="timer-display" id="timerDisplay">00:00:00.0</div>
+  <div class="timer-sub" id="timerSub">Current: 00:00:00.0</div>
+
+  <div class="countdown-setup hidden" id="countdownSetup">
+    <div class="cd-input-wrap">
+      <input type="number" id="cdH" min="0" max="99" value="0">
+      <label>HR</label>
+    </div>
+    <span>:</span>
+    <div class="cd-input-wrap">
+      <input type="number" id="cdM" min="0" max="59" value="10">
+      <label>MIN</label>
+    </div>
+    <span>:</span>
+    <div class="cd-input-wrap">
+      <input type="number" id="cdS" min="0" max="59" value="0">
+      <label>SEC</label>
+    </div>
+  </div>
+
+  <div class="mode-selector" id="modeSelector">
+    <button class="mode-btn active" data-mode="session" data-tooltip="Tracks your full study session, start to finish">Session</button>
+    <button class="mode-btn" data-mode="question" data-tooltip="Times how long each question or exercise takes you">Practice</button>
+    <button class="mode-btn" data-mode="countdown" data-tooltip="Counts down from a set time for focused, timed work">Timer</button>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-main" id="startBtn">Start</button>
+    <button class="btn btn-icon hidden" id="pauseBtn" title="Pause">II</button>
+    <button class="btn btn-icon" id="resetBtn" title="Reset">&#x21bb;</button>
+  </div>
+
+  <div class="progress-section" id="progressSection">
+    <div class="progress-header">
+      <span id="progressLabel">Goal: 100 Hours</span>
+      <span id="progressPercent">0%</span>
+    </div>
+    <div class="progress-bar-wrap" id="progressBarWrap">
+      <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="total-time" id="totalTimeEl">Total Study Time: <span id="totalTime">0h 0m 0s</span></div>
+  </div>
+</div>
+
+<button class="settings-btn" id="settingsBtn">&#x2699;</button>
+
+<div class="settings-panel" id="settingsPanel">
+  <h3>Settings</h3>
+  <div class="setting-row">
+    <span class="setting-label">Light Theme</span>
+    <div class="toggle" id="themeToggle"></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Goal Tracking</span>
+    <div class="toggle" id="goalToggle"></div>
+  </div>
+  <div class="setting-row goal-setting-row" id="goalHoursRow">
+    <span class="setting-label">Goal (hours)</span>
+    <input type="number" id="settingsGoalHours" class="setting-input" value="100" min="1">
+  </div>
+  <div class="setting-row goal-setting-row" id="goalDeadlineRow">
+    <span class="setting-label">Deadline</span>
+    <input type="date" id="settingsDeadline" class="setting-input">
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Contact Support</span>
+    <button class="btn-small" id="contactBtn">Email</button>
+  </div>
+  <div class="contact-panel hidden" id="contactPanel">
+    <p>ammarkhan5683@gmail.com</p>
+    <button class="btn-small" id="copyEmailBtn">Copy</button>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Support Me</span>
+    <button class="btn-small" id="donateBtn">Donate Now!</button>
+  </div>
+  <div class="contact-panel hidden" id="donatePanel" style="flex-direction:column; gap:0.5rem; align-items:stretch; text-align:left;">
+    <div style="font-size:0.72rem; color:var(--text-dim); line-height:1.5;">
+      <p style="margin-bottom:0.4rem; color:var(--text); font-weight:600; font-size:0.78rem;">⚡ Donate via Crypto</p>
+      <p style="margin-bottom:0.2rem;"><strong>Binance Pay</strong> (Binance Users Only): <span style="color:var(--accent); font-family:monospace;">578153159</span></p>
+      <p style="margin-bottom:0.2rem;"><strong>USDT – BEP20</strong> (BNB Smart Chain):</p>
+      <p style="font-family:monospace; font-size:0.68rem; word-break:break-all; color:var(--accent); margin-bottom:0.3rem;">0x22934a815EC095405bca01fB82D1131a02959F0A</p>
+      <p style="font-size:0.65rem; color:var(--orange); border:1px solid var(--border); border-radius:6px; padding:0.4rem; background:var(--bg-glass);">⚠️ <strong>Crucial:</strong> Always send USDT on <strong>BNB Smart Chain (BEP20)</strong> only. Sending via TRON (TRC20) or any other network to this address will result in <strong>permanent loss</strong> of funds.</p>
+      <p style="margin-top:0.4rem; font-size:0.7rem; opacity:0.6;">GitHub Sponsors — coming soon</p>
+    </div>
+    <div style="display:flex; gap:0.4rem;">
+      <button class="btn-small" id="copyBinanceIdBtn" style="flex:1;">Copy Binance ID</button>
+      <button class="btn-small" id="copyWalletAddrBtn" style="flex:1;">Copy Wallet</button>
+    </div>
+  </div>
+  <button class="danger-btn" id="resetAllBtn">Reset All Progress</button>
+</div>
+
+<script>
+(function() {
+
+  const quotes = [
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+    { text: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+    { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+    { text: "Your time is limited, don't waste it living someone else's life.", author: "Steve Jobs" },
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+    { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+    { text: "Act as if what you do makes a difference. It does.", author: "William James" },
+    { text: "Dream big and dare to fail.", author: "Norman Vaughan" },
+    { text: "What we learn with pleasure we never forget.", author: "Alfred Mercier" },
+    { text: "Education is the passport to the future.", author: "Malcolm X" },
+    { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
+    { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
+    { text: "Live as if you were to die tomorrow. Learn as if you were to live forever.", author: "Mahatma Gandhi" },
+    { text: "The more that you read, the more things you will know.", author: "Dr. Seuss" },
+    { text: "Knowledge is power.", author: "Francis Bacon" },
+    { text: "Learning never exhausts the mind.", author: "Leonardo da Vinci" },
+    { text: "The mind is not a vessel to be filled but a fire to be kindled.", author: "Plutarch" },
+    { text: "Wisdom is not a product of schooling but of the lifelong attempt to acquire it.", author: "Albert Einstein" },
+    { text: "Strive for progress, not perfection.", author: "Unknown" },
+    { text: "There are no shortcuts to any place worth going.", author: "Beverly Sills" },
+    { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+    { text: "Fall seven times, stand up eight.", author: "Japanese Proverb" },
+    { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+    { text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham Lincoln" },
+    { text: "The expert in anything was once a beginner.", author: "Helen Hayes" },
+    { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
+    { text: "Great things never come from comfort zones.", author: "Unknown" },
+    { text: "Success doesn't just find you. You have to go out and get it.", author: "Unknown" },
+    { text: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Unknown" },
+    { text: "Dream it. Wish it. Do it.", author: "Unknown" },
+    { text: "Sometimes later becomes never. Do it now.", author: "Unknown" },
+    { text: "Don't stop when you're tired. Stop when you're done.", author: "Unknown" },
+    { text: "Wake up with determination. Go to bed with satisfaction.", author: "Unknown" },
+    { text: "Do something today that your future self will thank you for.", author: "Sean Patrick Flanery" },
+    { text: "Little by little, a little becomes a lot.", author: "Tanzanian Proverb" },
+    { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+    { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+    { text: "Opportunities don't happen. You create them.", author: "Chris Grosser" },
+    { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
+    { text: "I'm proud of you twin.", author: "Your Future Self" },
+    { text: "You got this twin :)", author: "The Universe" },
+    { text: "Lock in. No cap, you're built different.", author: "Real Talk" },
+    { text: "Stay hungry, stay foolish. But like, in a chill way.", author: "Steve Jobs (paraphrased)" },
+    { text: "The grind don't stop, and neither do you.", author: "Unknown" },
+    { text: "You're not lazy, you're just resting before the comeback.", author: "Your Inner Hype Man" },
+    { text: "Every hour you put in is a brick in your empire. Keep laying them.", author: "Unknown" },
+    { text: "Slay the books, queen/king. Slay them.", author: "The Gossip" },
+    { text: "Your future self is watching you right now through memories. Make them proud.", author: "Unknown" },
+    { text: "One day you'll look back and be glad you started today. No cap.", author: "Unknown" },
+    { text: "You're not behind. You're exactly where you need to be to get where you're going.", author: "Unknown" },
+    { text: "Bet on yourself. The returns are insane.", author: "Unknown" },
+    { text: "Small steps every day > giant leaps once a year.", author: "Unknown" },
+    { text: "Your brain is a muscle. Flex it.", author: "Unknown" },
+    { text: "They sleep, you study. That's the difference.", author: "Unknown" },
+    { text: "Level up. The game doesn't pause for anyone.", author: "Unknown" },
+    { text: "You didn't come this far to only come this far.", author: "Rafael Nadal" },
+    { text: "Be the person your dog thinks you are. Study hard.", author: "Unknown" },
+    { text: "The only bad study session is the one you didn't do.", author: "Unknown" },
+    { text: "You're literally creating your own future right now. That's fire.", author: "Unknown" },
+    { text: "Pain is temporary. GPA is forever. Just kidding — knowledge is forever.", author: "Unknown" },
+    { text: "You are the main character. Act like it.", author: "Unknown" },
+    { text: "No one is you and that is your power. Use it.", author: "Unknown" },
+    { text: "Manifesting that A+ energy for you right now.", author: "The Vibes" },
+    { text: "Your comfort zone is a beautiful place, but nothing ever grows there.", author: "Unknown" },
+    { text: "Rome wasn't built in a day, but they were laying bricks every hour.", author: "Unknown" },
+    { text: "Progress, not perfection. We move.", author: "Unknown" },
+    { text: "You're doing amazing, sweetie. Keep going.", author: "Kris Jenner (probably)" },
+    { text: "Study now, shine later. That's the contract.", author: "Unknown" },
+    { text: "Every page you turn is a step closer to the life you want.", author: "Unknown" },
+    { text: "Don't let yesterday take up too much of today. Fresh start, let's go.", author: "Will Rogers" },
+    { text: "If it was easy, everyone would do it. You're not everyone.", author: "Unknown" },
+    { text: "The comeback is always stronger than the setback.", author: "Unknown" },
+    { text: "Your potential is endless. Go do what you were created to do.", author: "Unknown" },
+    { text: "You are allowed to be both a masterpiece and a work in progress.", author: "Sophia Bush" },
+    { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
+    { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+    { text: "Don't wish it were easier. Wish you were better.", author: "Jim Rohn" },
+    { text: "Work hard in silence. Let success be your noise.", author: "Frank Ocean" },
+    { text: "You don't get what you wish for. You get what you work for.", author: "Unknown" },
+    { text: "Study like there's no tomorrow, because one day there won't be.", author: "Unknown" },
+    { text: "The man who moves a mountain begins by carrying away small stones.", author: "Confucius" },
+    { text: "Don't count the days. Make the days count.", author: "Muhammad Ali" },
+    { text: "It always seems impossible until it's done. And then you flex.", author: "Nelson Mandela (vibes edition)" }
+  ];
+
+  let state = {
+    sessionRunning: false, sessionStartTime: 0, sessionElapsed: 0,
+    questionRunning: false, questionStartTime: 0, questionElapsed: 0,
+    countdownRunning: false, countdownStartTime: 0, countdownInitialMs: 600000,
+    paused: false, pauseStart: 0,
+    totalMs: 0, todayMs: 0, lastStudyDate: null,
+    goalHours: 100, goalDeadline: '2026-09-05', hasGoal: true,
+    goalHitAcked: false, deadlineHitAcked: false,
+    theme: 'dark', mode: 'session', firstTime: true
+  };
+
+  const timerDisplay = document.getElementById('timerDisplay');
+  const timerSub = document.getElementById('timerSub');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const quoteText = document.getElementById('quoteText');
+  const quoteAuthor = document.getElementById('quoteAuthor');
+  const progressBar = document.getElementById('progressBar');
+  const progressPercent = document.getElementById('progressPercent');
+  const progressLabel = document.getElementById('progressLabel');
+  const progressSection = document.getElementById('progressSection');
+  const progressBarWrap = document.getElementById('progressBarWrap');
+  const totalTimeEl = document.getElementById('totalTime');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const themeToggle = document.getElementById('themeToggle');
+  const goalToggle = document.getElementById('goalToggle');
+  const resetAllBtn = document.getElementById('resetAllBtn');
+  const ambient = document.getElementById('ambient');
+  const countdownSetup = document.getElementById('countdownSetup');
+  const cdH = document.getElementById('cdH');
+  const cdM = document.getElementById('cdM');
+  const cdS = document.getElementById('cdS');
+  const dailyGoalTitle = document.getElementById('dailyGoalTitle');
+  const dailyGoalValue = document.getElementById('dailyGoalValue');
+  const dailyGoalRed = document.getElementById('dailyGoalRed');
+  const dailyGoalGreen = document.getElementById('dailyGoalGreen');
+  const dailyGoalSub = document.getElementById('dailyGoalSub');
+  const dailyGoalTrack = document.getElementById('dailyGoalTrack');
+  const modeBtns = document.querySelectorAll('.mode-btn');
+  const welcomeOverlay = document.getElementById('welcomeOverlay');
+  const setupStartBtn = document.getElementById('setupStartBtn');
+  const setupSkipBtn = document.getElementById('setupSkipBtn');
+  const setupGoal = document.getElementById('setupGoal');
+  const setupDeadline = document.getElementById('setupDeadline');
+  const settingsGoalHours = document.getElementById('settingsGoalHours');
+  const settingsDeadline = document.getElementById('settingsDeadline');
+  const goalHoursRow = document.getElementById('goalHoursRow');
+  const goalDeadlineRow = document.getElementById('goalDeadlineRow');
+  const contactBtn = document.getElementById('contactBtn');
+  const contactPanel = document.getElementById('contactPanel');
+  const copyEmailBtn = document.getElementById('copyEmailBtn');
+  const goalHitOverlay = document.getElementById('goalHitOverlay');
+  const goalHitTitle = document.getElementById('goalHitTitle');
+  const goalHitMessage = document.getElementById('goalHitMessage');
+  const goalHitNewHours = document.getElementById('goalHitNewHours');
+  const goalHitNewDeadline = document.getElementById('goalHitNewDeadline');
+  const goalHitSaveBtn = document.getElementById('goalHitSaveBtn');
+  const goalHitContinueBtn = document.getElementById('goalHitContinueBtn');
+
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('span');
+    s.className = 'dot';
+    const size = 3 + Math.random() * 6;
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = Math.random() * 10 + 's';
+    s.style.animationDuration = (8 + Math.random() * 10) + 's';
+    ambient.appendChild(s);
+  }
+  for (let i = 0; i < 6; i++) {
+    const o = document.createElement('div');
+    o.className = 'orb';
+    const size = 80 + Math.random() * 150;
+    o.style.width = size + 'px';
+    o.style.height = size + 'px';
+    o.style.left = Math.random() * 100 + '%';
+    o.style.top = Math.random() * 100 + '%';
+    o.style.animationDelay = Math.random() * 20 + 's';
+    o.style.animationDuration = (15 + Math.random() * 15) + 's';
+    ambient.appendChild(o);
+  }
+  for (let i = 0; i < 3; i++) {
+    const b = document.createElement('div');
+    b.className = 'blob';
+    b.style.left = (Math.random() * 60) + '%';
+    b.style.top = (Math.random() * 60) + '%';
+    b.style.animationDelay = Math.random() * 25 + 's';
+    b.style.animationDuration = (20 + Math.random() * 15) + 's';
+    ambient.appendChild(b);
+  }
+
+  function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+
+  function getDaysRemaining() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const deadline = new Date(state.goalDeadline);
+    deadline.setHours(0,0,0,0);
+    const diff = deadline - today;
+    const oneDay = 24 * 60 * 60 * 1000;
+    return Math.ceil(diff / oneDay) + 1;
+  }
+
+  function getDailyGoalHours() {
+    const totalHours = state.totalMs / (1000 * 60 * 60);
+    const remaining = Math.max(0, state.goalHours - totalHours);
+    if (remaining <= 0) return 0;
+    const days = getDaysRemaining();
+    if (days <= 0) return 0;
+    return remaining / days;
+  }
+
+  function isGoalReached() {
+    return state.hasGoal && (state.totalMs / (1000 * 60 * 60)) >= state.goalHours;
+  }
+
+  function isDeadlineReached() {
+    return state.hasGoal && getTodayStr() >= state.goalDeadline;
+  }
+
+  function checkGoalStatus() {
+    if (!state.hasGoal || goalHitOverlay.classList.contains('open')) return;
+    if (isGoalReached() && !state.goalHitAcked) {
+      goalHitTitle.textContent = 'Goal Reached! \uD83C\uDF89';
+      goalHitMessage.textContent = 'You hit ' + state.goalHours + ' hours. Keep the same target, or set a new one.';
+      openGoalHitModal();
+    } else if (isDeadlineReached() && !state.deadlineHitAcked) {
+      goalHitTitle.textContent = 'Deadline Reached';
+      goalHitMessage.textContent = "Your deadline has passed. Today's goal is 0h until you set a new date.";
+      openGoalHitModal();
+    }
+  }
+
+  function openGoalHitModal() {
+    goalHitNewHours.value = state.goalHours;
+    goalHitNewDeadline.value = state.goalDeadline;
+    goalHitOverlay.classList.add('open');
+  }
+
+  goalHitSaveBtn.addEventListener('click', () => {
+    state.goalHours = Math.max(1, parseInt(goalHitNewHours.value) || state.goalHours);
+    state.goalDeadline = goalHitNewDeadline.value || state.goalDeadline;
+    state.goalHitAcked = false;
+    state.deadlineHitAcked = false;
+    settingsGoalHours.value = state.goalHours;
+    settingsDeadline.value = state.goalDeadline;
+    goalHitOverlay.classList.remove('open');
+    saveState();
+    updateDisplay();
+  });
+
+  goalHitContinueBtn.addEventListener('click', () => {
+    if (isGoalReached()) state.goalHitAcked = true;
+    if (isDeadlineReached()) state.deadlineHitAcked = true;
+    goalHitOverlay.classList.remove('open');
+    saveState();
+  });
+
+  function getTodayTotalMs() {
+    const now = performance.now();
+    const currentSession = state.sessionRunning && !state.paused ? state.sessionElapsed + (now - state.sessionStartTime) : state.sessionElapsed;
+    return state.todayMs + currentSession;
+  }
+
+  function formatTime(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const tenths = Math.floor((ms % 1000) / 100);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${tenths}`;
+  }
+
+  function formatCompact(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  function rotateQuote() {
+    const q = quotes[Math.floor(Math.random() * quotes.length)];
+    quoteText.style.opacity = 0;
+    quoteAuthor.style.opacity = 0;
+    setTimeout(() => {
+      quoteText.textContent = '"' + q.text + '"';
+      quoteAuthor.textContent = '\u2014 ' + q.author;
+      quoteText.style.opacity = 1;
+      quoteAuthor.style.opacity = 1;
+    }, 300);
+  }
+
+  function updateDailyWidget() {
+    const todayMs = getTodayTotalMs();
+    const todayHours = todayMs / (1000 * 60 * 60);
+
+    if (state.hasGoal) {
+      dailyGoalTitle.textContent = "Today's Goal";
+      dailyGoalTrack.classList.remove('hidden');
+      const goalHours = getDailyGoalHours();
+      const pct = goalHours > 0 ? (todayHours / goalHours) * 100 : 100;
+      dailyGoalValue.textContent = goalHours.toFixed(1) + 'h';
+      const redWidth = Math.min(100, pct);
+      const greenWidth = Math.min(100, Math.max(0, pct - 100));
+      dailyGoalRed.style.width = redWidth + '%';
+      dailyGoalRed.classList.toggle('full', redWidth >= 100);
+      dailyGoalGreen.style.width = greenWidth + '%';
+      if (pct >= 100) {
+        const over = todayHours - goalHours;
+        dailyGoalSub.innerHTML = todayHours.toFixed(1) + ' hrs <span class="over">(+' + over.toFixed(1) + ' over)</span>';
+      } else {
+        dailyGoalSub.textContent = todayHours.toFixed(1) + ' / ' + goalHours.toFixed(1) + ' hrs';
+      }
+    } else {
+      dailyGoalTitle.textContent = "Today's Study";
+      dailyGoalTrack.classList.add('hidden');
+      dailyGoalValue.textContent = todayHours.toFixed(1) + 'h';
+      dailyGoalSub.textContent = 'Keep stacking hours';
+    }
+  }
+
+  function updateDisplay() {
+    const now = performance.now();
+    const sessionMs = state.sessionRunning && !state.paused
+      ? state.sessionElapsed + (now - state.sessionStartTime)
+      : state.sessionElapsed;
+    const questionMs = state.questionRunning && !state.paused
+      ? state.questionElapsed + (now - state.questionStartTime)
+      : state.questionElapsed;
+    let countdownMs = 0;
+    if (state.countdownRunning && !state.paused) {
+      countdownMs = Math.max(0, state.countdownInitialMs - (now - state.countdownStartTime));
+    } else if (state.mode === 'countdown') {
+      countdownMs = state.countdownInitialMs;
+    }
+
+    if (state.mode === 'session') {
+      timerDisplay.textContent = formatTime(sessionMs);
+      timerSub.textContent = 'Current: ' + formatTime(sessionMs);
+    } else if (state.mode === 'question') {
+      timerDisplay.textContent = formatTime(questionMs);
+      timerSub.textContent = 'Session: ' + formatTime(sessionMs);
+    } else if (state.mode === 'countdown') {
+      if (state.countdownRunning) {
+        timerDisplay.textContent = formatTime(countdownMs);
+        timerSub.textContent = 'Session: ' + formatTime(sessionMs);
+        timerDisplay.classList.toggle('warning', countdownMs <= 10000 && countdownMs > 0);
+        timerDisplay.classList.toggle('finished', countdownMs === 0);
+      } else {
+        timerDisplay.textContent = formatTime(countdownMs);
+        timerSub.textContent = 'Set your target time';
+        timerDisplay.classList.remove('warning', 'finished');
+      }
+    }
+
+    const total = state.totalMs + (state.sessionRunning ? sessionMs : 0);
+    totalTimeEl.textContent = formatCompact(total);
+
+    if (state.hasGoal) {
+      progressSection.classList.remove('no-goal');
+      progressLabel.textContent = 'Goal: ' + state.goalHours + ' Hours';
+      const pct = Math.min((total / (state.goalHours * 60 * 60 * 1000)) * 100, 100);
+      progressBar.style.width = pct + '%';
+      progressPercent.textContent = pct.toFixed(1) + '%';
+    } else {
+      progressSection.classList.add('no-goal');
+      progressLabel.textContent = 'All-Time Study';
+    }
+
+    updateDailyWidget();
+    checkGoalStatus();
+  }
+
+  let rafId = null;
+  function tick() {
+    if (state.paused) return;
+    if (state.sessionRunning || state.questionRunning || state.countdownRunning) {
+      updateDisplay();
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  function startLoop() {
+    cancelAnimationFrame(rafId);
+    tick();
+  }
+
+  function pauseAll() {
+    if (!state.sessionRunning && !state.questionRunning && !state.countdownRunning) return;
+    if (state.paused) return;
+    state.paused = true;
+    state.pauseStart = performance.now();
+    startBtn.textContent = 'Resume';
+    pauseBtn.classList.add('hidden');
+    cancelAnimationFrame(rafId);
+  }
+
+  function resumeAll() {
+    if (!state.paused) return;
+    const now = performance.now();
+    const pauseDuration = now - state.pauseStart;
+    state.paused = false;
+    state.pauseStart = 0;
+    if (state.sessionRunning) state.sessionStartTime += pauseDuration;
+    if (state.questionRunning) state.questionStartTime += pauseDuration;
+    if (state.countdownRunning) state.countdownStartTime += pauseDuration;
+    startBtn.textContent = 'Stop';
+    pauseBtn.classList.remove('hidden');
+    startLoop();
+  }
+
+  function stopSession(now) {
+    if (!state.sessionRunning) return;
+    state.sessionElapsed += now - state.sessionStartTime;
+    state.totalMs += state.sessionElapsed;
+    state.todayMs += state.sessionElapsed;
+    state.lastStudyDate = getTodayStr();
+    state.sessionRunning = false;
+    state.sessionElapsed = 0;
+    state.sessionStartTime = 0;
+  }
+
+  function stopQuestion(now) {
+    if (!state.questionRunning) return;
+    state.questionElapsed += now - state.questionStartTime;
+    state.questionRunning = false;
+    state.questionElapsed = 0;
+    state.questionStartTime = 0;
+  }
+
+  function stopCountdown(now) {
+    if (!state.countdownRunning) return;
+    state.countdownRunning = false;
+    timerDisplay.classList.remove('warning', 'finished');
+  }
+
+  function saveState() {
+    const now = performance.now();
+    const sessionAdd = state.sessionRunning && !state.paused ? (now - state.sessionStartTime) : 0;
+    const payload = {
+      totalMs: state.totalMs + state.sessionElapsed + sessionAdd,
+      todayMs: state.todayMs + state.sessionElapsed + sessionAdd,
+      lastStudyDate: getTodayStr(),
+      theme: state.theme,
+      mode: state.mode,
+      countdownInitialMs: state.countdownInitialMs,
+      goalHours: state.goalHours,
+      goalDeadline: state.goalDeadline,
+      hasGoal: state.hasGoal,
+      goalHitAcked: state.goalHitAcked,
+      deadlineHitAcked: state.deadlineHitAcked,
+      firstTime: false
+    };
+    localStorage.setItem('stackTimerState', JSON.stringify(payload));
+  }
+
+  function loadState() {
+    try {
+      let raw = localStorage.getItem('stackTimerState');
+      let migrated = false;
+      if (!raw) {
+        raw = localStorage.getItem('focusCafeState_v3') || localStorage.getItem('focusCafeState_v2') || localStorage.getItem('focusCafeState');
+        if (raw) migrated = true;
+      }
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      state.totalMs = data.totalMs || 0;
+      state.theme = data.theme || 'dark';
+      state.mode = data.mode || 'session';
+      state.countdownInitialMs = data.countdownInitialMs || 600000;
+      state.goalHours = data.goalHours || 100;
+      state.goalDeadline = data.goalDeadline || '2026-09-05';
+      state.hasGoal = data.hasGoal !== undefined ? data.hasGoal : true;
+      state.goalHitAcked = data.goalHitAcked || false;
+      state.deadlineHitAcked = data.deadlineHitAcked || false;
+      state.firstTime = data.firstTime !== undefined ? data.firstTime : true;
+      if (migrated) state.firstTime = false;
+      if (data.todayMs !== undefined && data.lastStudyDate) {
+        const todayStr = getTodayStr();
+        if (data.lastStudyDate === todayStr) {
+          state.todayMs = data.todayMs || 0;
+          state.lastStudyDate = todayStr;
+        } else {
+          state.todayMs = 0;
+          state.lastStudyDate = todayStr;
+        }
+      } else {
+        state.todayMs = 0;
+        state.lastStudyDate = getTodayStr();
+      }
+      document.body.setAttribute('data-theme', state.theme);
+      if (state.theme === 'light') themeToggle.classList.add('active');
+      goalToggle.classList.toggle('active', state.hasGoal);
+      settingsGoalHours.value = state.goalHours;
+      settingsDeadline.value = state.goalDeadline;
+      updateGoalRows();
+      modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
+      if (state.mode === 'countdown') {
+        countdownSetup.classList.remove('hidden');
+        const totalSec = Math.floor(state.countdownInitialMs / 1000);
+        cdH.value = Math.floor(totalSec / 3600);
+        cdM.value = Math.floor((totalSec % 3600) / 60);
+        cdS.value = totalSec % 60;
+      }
+      updateDisplay();
+    } catch (e) { console.error('Load failed', e); }
+  }
+
+  function updateGoalRows() {
+    if (state.hasGoal) {
+      goalHoursRow.classList.remove('hidden');
+      goalDeadlineRow.classList.remove('hidden');
+    } else {
+      goalHoursRow.classList.add('hidden');
+      goalDeadlineRow.classList.add('hidden');
+    }
+  }
+
+  function setMode(mode) {
+    const now = performance.now();
+    if (state.paused) {
+      const pauseDuration = now - state.pauseStart;
+      if (state.sessionRunning) state.sessionStartTime += pauseDuration;
+      if (state.questionRunning) state.questionStartTime += pauseDuration;
+      if (state.countdownRunning) state.countdownStartTime += pauseDuration;
+      state.pauseStart = now;
+    }
+    if (mode !== 'question' && state.questionRunning) {
+      stopQuestion(now);
+    }
+    if (mode !== 'countdown' && state.countdownRunning) {
+      state.countdownRunning = false;
+      timerDisplay.classList.remove('warning', 'finished');
+    }
+    state.mode = mode;
+    modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    if (mode === 'countdown') {
+      countdownSetup.classList.remove('hidden');
+    } else {
+      countdownSetup.classList.add('hidden');
+    }
+    const isRunning = (mode === 'session' && state.sessionRunning) ||
+                       (mode === 'question' && state.questionRunning) ||
+                       (mode === 'countdown' && state.countdownRunning);
+    startBtn.textContent = state.paused ? 'Resume' : (isRunning ? 'Stop' : 'Start');
+    pauseBtn.classList.toggle('hidden', !isRunning || state.paused);
+    updateDisplay();
+    saveState();
+  }
+
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+  });
+
+  function updateCountdownFromInputs() {
+    const h = parseInt(cdH.value) || 0;
+    const m = parseInt(cdM.value) || 0;
+    const s = parseInt(cdS.value) || 0;
+    state.countdownInitialMs = ((h * 3600) + (m * 60) + s) * 1000;
+    if (state.mode === 'countdown' && !state.countdownRunning) updateDisplay();
+    saveState();
+  }
+  [cdH, cdM, cdS].forEach(inp => {
+    inp.addEventListener('change', updateCountdownFromInputs);
+    inp.addEventListener('keyup', updateCountdownFromInputs);
+  });
+
+  startBtn.addEventListener('click', () => {
+    if (state.paused) {
+      resumeAll();
+      return;
+    }
+    const now = performance.now();
+    if (state.mode === 'session') {
+      if (state.sessionRunning) {
+        stopSession(now);
+        startBtn.textContent = 'Start';
+        pauseBtn.classList.add('hidden');
+        timerDisplay.classList.remove('running');
+        saveState();
+        updateDisplay();
+      } else {
+        state.sessionStartTime = now;
+        state.sessionElapsed = 0;
+        state.sessionRunning = true;
+        startBtn.textContent = 'Stop';
+        pauseBtn.classList.remove('hidden');
+        timerDisplay.classList.add('running');
+        rotateQuote();
+        startLoop();
+      }
+    } else if (state.mode === 'question') {
+      if (state.questionRunning) {
+        stopQuestion(now);
+        stopSession(now);
+        startBtn.textContent = 'Start';
+        pauseBtn.classList.add('hidden');
+        timerDisplay.classList.remove('running');
+        saveState();
+        updateDisplay();
+      } else {
+        if (!state.sessionRunning) {
+          state.sessionStartTime = now;
+          state.sessionElapsed = 0;
+          state.sessionRunning = true;
+          timerDisplay.classList.add('running');
+        }
+        state.questionStartTime = now;
+        state.questionElapsed = 0;
+        state.questionRunning = true;
+        startBtn.textContent = 'Stop';
+        pauseBtn.classList.remove('hidden');
+        rotateQuote();
+        startLoop();
+      }
+    } else if (state.mode === 'countdown') {
+      if (state.countdownRunning) {
+        stopCountdown(now);
+        startBtn.textContent = 'Start';
+        pauseBtn.classList.add('hidden');
+        saveState();
+        updateDisplay();
+      } else {
+        if (state.countdownInitialMs <= 0) return;
+        if (!state.sessionRunning) {
+          state.sessionStartTime = now;
+          state.sessionElapsed = 0;
+          state.sessionRunning = true;
+          timerDisplay.classList.add('running');
+        }
+        state.countdownStartTime = now;
+        state.countdownRunning = true;
+        startBtn.textContent = 'Stop';
+        pauseBtn.classList.remove('hidden');
+        rotateQuote();
+        startLoop();
+      }
+    }
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    if (state.paused) resumeAll(); else pauseAll();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    const now = performance.now();
+    if (state.paused) {
+      const pauseDuration = now - state.pauseStart;
+      if (state.sessionRunning) state.sessionStartTime += pauseDuration;
+      if (state.questionRunning) state.questionStartTime += pauseDuration;
+      if (state.countdownRunning) state.countdownStartTime += pauseDuration;
+      state.paused = false;
+      state.pauseStart = 0;
+    }
+    if (state.mode === 'session') {
+      if (state.sessionRunning) {
+        stopSession(now);
+        if (state.questionRunning) stopQuestion(now);
+        if (state.countdownRunning) stopCountdown(now);
+        startBtn.textContent = 'Start';
+        pauseBtn.classList.add('hidden');
+        timerDisplay.classList.remove('running');
+      }
+      state.sessionElapsed = 0;
+      state.sessionStartTime = 0;
+    } else if (state.mode === 'question') {
+      if (state.questionRunning) {
+        stopQuestion(now);
+        startBtn.textContent = 'Start';
+        pauseBtn.classList.add('hidden');
+      }
+      state.questionElapsed = 0;
+      state.questionStartTime = 0;
+    } else if (state.mode === 'countdown') {
+      if (state.countdownRunning) {
+        stopCountdown(now);
+        startBtn.textContent = 'Start';
+        pauseBtn.classList.add('hidden');
+      }
+    }
+    saveState();
+    updateDisplay();
+  });
+
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    settingsPanel.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+      settingsPanel.classList.remove('open');
+      contactPanel.classList.add('hidden');
+    }
+  });
+
+  themeToggle.addEventListener('click', () => {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', state.theme);
+    themeToggle.classList.toggle('active');
+    saveState();
+  });
+
+  goalToggle.addEventListener('click', () => {
+    state.hasGoal = !state.hasGoal;
+    if (state.hasGoal) { state.goalHitAcked = false; state.deadlineHitAcked = false; }
+    goalToggle.classList.toggle('active');
+    updateGoalRows();
+    updateDisplay();
+    saveState();
+  });
+
+  settingsGoalHours.addEventListener('change', () => {
+    state.goalHours = Math.max(1, parseInt(settingsGoalHours.value) || 100);
+    settingsGoalHours.value = state.goalHours;
+    state.goalHitAcked = false;
+    updateDisplay();
+    saveState();
+  });
+
+  settingsDeadline.addEventListener('change', () => {
+    state.goalDeadline = settingsDeadline.value;
+    state.deadlineHitAcked = false;
+    updateDisplay();
+    saveState();
+  });
+
+  contactBtn.addEventListener('click', () => {
+    contactPanel.classList.toggle('hidden');
+  });
+
+  copyEmailBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText('ammarkhan5683@gmail.com').then(() => {
+      copyEmailBtn.textContent = 'Copied!';
+      setTimeout(() => copyEmailBtn.textContent = 'Copy', 1500);
+    });
+  });
+
+  // Donate panel toggle in settings
+  const donateBtn = document.getElementById('donateBtn');
+  const donatePanel = document.getElementById('donatePanel');
+  const copyBinanceIdBtn = document.getElementById('copyBinanceIdBtn');
+  const copyWalletAddrBtn = document.getElementById('copyWalletAddrBtn');
+
+  donateBtn.addEventListener('click', () => {
+    donatePanel.classList.toggle('hidden');
+  });
+
+  copyBinanceIdBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText('578153159').then(() => {
+      copyBinanceIdBtn.textContent = 'Copied!';
+      setTimeout(() => copyBinanceIdBtn.textContent = 'Copy Binance ID', 1500);
+    });
+  });
+
+  copyWalletAddrBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText('0x22934a815EC095405bca01fB82D1131a02959F0A').then(() => {
+      copyWalletAddrBtn.textContent = 'Copied!';
+      setTimeout(() => copyWalletAddrBtn.textContent = 'Copy Wallet', 1500);
+    });
+  });
+
+  // Donate panel toggle in welcome overlay
+  const welcomeDonateBtn = document.getElementById('welcomeDonateBtn');
+  const welcomeDonatePanel = document.getElementById('welcomeDonatePanel');
+  const copyBinanceBtn = document.getElementById('copyBinanceBtn');
+  const copyWalletBtn = document.getElementById('copyWalletBtn');
+
+  if (welcomeDonateBtn) {
+    welcomeDonateBtn.addEventListener('click', () => {
+      welcomeDonatePanel.classList.toggle('hidden');
+    });
+  }
+
+  if (copyBinanceBtn) {
+    copyBinanceBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText('578153159').then(() => {
+        copyBinanceBtn.textContent = 'Copied!';
+        setTimeout(() => copyBinanceBtn.textContent = 'Copy Binance ID', 1500);
+      });
+    });
+  }
+
+  if (copyWalletBtn) {
+    copyWalletBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText('0x22934a815EC095405bca01fB82D1131a02959F0A').then(() => {
+        copyWalletBtn.textContent = 'Copied!';
+        setTimeout(() => copyWalletBtn.textContent = 'Copy Wallet', 1500);
+      });
+    });
+  }
+
+  resetAllBtn.addEventListener('click', () => {
+    if (confirm('Are you sure? This will erase ALL study progress forever.')) {
+      state.totalMs = 0;
+      state.todayMs = 0;
+      state.sessionElapsed = 0;
+      state.questionElapsed = 0;
+      state.sessionRunning = false;
+      state.questionRunning = false;
+      state.countdownRunning = false;
+      state.paused = false;
+      state.goalHitAcked = false;
+      state.deadlineHitAcked = false;
+      cancelAnimationFrame(rafId);
+      startBtn.textContent = 'Start';
+      pauseBtn.classList.add('hidden');
+      timerDisplay.classList.remove('running', 'warning', 'finished');
+      goalHitOverlay.classList.remove('open');
+      localStorage.removeItem('stackTimerState');
+      localStorage.removeItem('focusCafeState_v3');
+      localStorage.removeItem('focusCafeState_v2');
+      localStorage.removeItem('focusCafeState');
+      updateDisplay();
+    }
+  });
+
+  setupStartBtn.addEventListener('click', () => {
+    state.goalHours = Math.max(1, parseInt(setupGoal.value) || 100);
+    state.goalDeadline = setupDeadline.value;
+    state.hasGoal = true;
+    state.firstTime = false;
+    state.goalHitAcked = false;
+    state.deadlineHitAcked = false;
+    settingsGoalHours.value = state.goalHours;
+    settingsDeadline.value = state.goalDeadline;
+    goalToggle.classList.add('active');
+    updateGoalRows();
+    welcomeOverlay.classList.remove('open');
+    saveState();
+    updateDisplay();
+  });
+
+  setupSkipBtn.addEventListener('click', () => {
+    state.hasGoal = false;
+    state.firstTime = false;
+    goalToggle.classList.remove('active');
+    updateGoalRows();
+    welcomeOverlay.classList.remove('open');
+    saveState();
+    updateDisplay();
+  });
+
+  setInterval(() => {
+    if (state.sessionRunning || state.questionRunning || state.countdownRunning) saveState();
+  }, 5000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (state.sessionRunning || state.questionRunning || state.countdownRunning) updateDisplay();
+  });
+
+  loadState();
+  if (state.firstTime) {
+    welcomeOverlay.classList.add('open');
+  }
+  updateDisplay();
+
+  setInterval(() => {
+    if (state.sessionRunning || state.questionRunning || state.countdownRunning) rotateQuote();
+  }, 120000);
+
+})();
+</script>
+</body>
+</html>
