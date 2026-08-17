@@ -1,7 +1,7 @@
 # Stack
 
 Stack is a minimal, browser based study timer built to help you stay consistent and accountable. It tracks your study sessions, lets you time individual practice questions, run focused countdowns, and set an overall hours goal with a deadline so you always know exactly how much you need to do today. Everything runs locally in your browser with no sign up, no server, and no tracking.
-
+<img width="1917" height="865" alt="image" src="https://github.com/user-attachments/assets/dd4dfa9a-b601-45f5-a53b-6100ca739b1b" />
 Stack was built by Ammar, an ACCA student, as a personal tool to study more consistently, and shared so anyone else working toward a goal (exams, certifications, coursework, or anything else) can use it too.
 
 ## Live Demo
@@ -9,7 +9,7 @@ Stack was built by Ammar, an ACCA student, as a personal tool to study more cons
 Once deployed with GitHub Pages, your live link will be:
 
 ```
-https://<your-github-username>.github.io/<your-repo-name>/
+https://ammar8bit.github.io/Stack/
 ```
 
 ## Features
