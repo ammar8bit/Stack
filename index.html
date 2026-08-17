@@ -1341,11 +1341,7 @@
     // Re-baseline any in-progress session so it doesn't get double-counted on top of the restored total
     state.sessionElapsed = 0;
     if (state.sessionRunning) {
-<<<<<<< HEAD:Assets/index.html
       state.sessionStartTime = Date.now();
-=======
-      state.sessionStartTime = performance.now();
->>>>>>> d02044ddc1542c5dc060bdcef0ade00a54466f7e:index.html
     }
     state.goalHitAcked = false;
     state.deadlineHitAcked = false;
