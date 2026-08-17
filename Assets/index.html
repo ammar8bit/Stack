@@ -4,6 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stack — Study Timer</title>
+<meta name="description" content="Stack is a free study timer that tracks your hours, sets daily goals from your deadline, and keeps you honest. Start a session and watch your progress stack up.">
+
+<!-- Open Graph / WhatsApp / LinkedIn / Facebook link preview -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Stack — Study Timer">
+<meta property="og:description" content="A study timer that keeps you accountable. Set a goal, hit start, and watch your hours stack up.">
+<meta property="og:image" content="https://ammar8bit.github.io/Stack/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://ammar8bit.github.io/Stack/">
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Stack — Study Timer">
+<meta name="twitter:description" content="A study timer that keeps you accountable. Set a goal, hit start, and watch your hours stack up.">
+<meta name="twitter:image" content="https://ammar8bit.github.io/Stack/assets/og-image.png">
+
+<!-- Favicon / bookmark / homescreen icons -->
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="assets/site.webmanifest">
+<meta name="theme-color" content="#1a0a0a">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
@@ -32,7 +58,7 @@
   @keyframes driftOrb { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-40px) scale(1.2)} 66%{transform:translate(-20px,20px) scale(0.9)} 100%{transform:translate(10px,-10px) scale(1.1)} }
   .ambient .blob { position:absolute; width:300px; height:300px; border-radius:50%; background:var(--accent); opacity:0.06; filter:blur(80px); animation:blobMove 25s infinite ease-in-out; }
   @keyframes blobMove { 0%,100%{transform:translate(0,0) scale(1)} 25%{transform:translate(100px,-80px) scale(1.3)} 50%{transform:translate(-60px,60px) scale(0.8)} 75%{transform:translate(40px,40px) scale(1.1)} }
-  .brand-top-right { position:fixed; top:1.5rem; right:1.5rem; font-size:0.7rem; letter-spacing:0.5em; text-transform:uppercase; color:var(--text-dim); font-weight:200; z-index:10; opacity:0.6; pointer-events:none; }
+  .brand-top-right { position:fixed; top:1.5rem; right:1.5rem; font-size:1.1rem; letter-spacing:0.5em; text-transform:uppercase; color:var(--text-dim); font-weight:400; z-index:10; opacity:0.75; pointer-events:none; }
   .welcome-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.7); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; padding:1.5rem; opacity:0; pointer-events:none; transition:opacity 0.4s; }
   .welcome-overlay.open { opacity:1; pointer-events:all; }
   .welcome-card { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:2.2rem 2rem; max-width:460px; width:100%; box-shadow:var(--shadow); transform:translateY(20px); transition:transform 0.4s; max-height:90vh; overflow-y:auto; }
@@ -62,6 +88,9 @@
   .daily-goal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem; }
   .daily-goal-header span:first-child { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); font-weight:600; }
   .daily-goal-header span:last-child { font-size:0.85rem; color:var(--accent); font-weight:700; }
+  .daily-goal-value-original { text-decoration:line-through; text-decoration-thickness:1.5px; text-decoration-color:currentColor; opacity:0.55; }
+  .daily-goal-value-arrow { margin:0 0.3em; opacity:0.45; font-size:0.8em; font-weight:400; }
+  .daily-goal-value-updated { color:var(--green); transition:color 0.3s; }
   .daily-goal-track { display:flex; width:100%; height:6px; background:var(--progress-track); border-radius:3px; overflow:visible; position:relative; }
   .daily-goal-red { height:100%; background:var(--accent); border-radius:3px 0 0 3px; transition:width 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow:0 0 6px var(--accent-glow); }
   .daily-goal-red.full { border-radius:3px; }
@@ -131,6 +160,8 @@
   .setting-input { width:80px; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0.25rem 0.4rem; font-family:var(--font-body); font-size:0.8rem; text-align:right; outline:none; }
   .setting-input:focus { border-color:var(--accent); }
   .setting-input[type="date"] { width:120px; text-align:center; font-size:0.75rem; }
+  .setting-value-wrap { display:flex; align-items:center; gap:0.5rem; }
+  .setting-value-text { font-size:0.85rem; color:var(--text); font-weight:600; }
   .toggle { width:40px; height:22px; background:var(--progress-track); border-radius:11px; position:relative; cursor:pointer; transition:background 0.3s; }
   .toggle::after { content:''; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:2px; left:2px; transition:transform 0.3s; }
   .toggle.active { background:var(--accent); }
@@ -155,7 +186,7 @@
     .mode-btn::after { display:none; }
     .mode-btn::before { display:none; }
     .countdown-setup input { width:44px; font-size:1.1rem; }
-    .brand-top-right { font-size:0.58rem; letter-spacing:0.3em; top:1rem; right:1rem; }
+    .brand-top-right { font-size:0.85rem; letter-spacing:0.3em; top:1rem; right:1rem; }
     .welcome-card { padding:1.5rem 1.2rem; }
     .setup-row input { width:100px; font-size:0.8rem; }
     .timer-display { font-size:clamp(2.6rem, 16vw, 6rem); letter-spacing:0.03em; }
@@ -321,11 +352,25 @@
   </div>
   <div class="setting-row goal-setting-row" id="goalHoursRow">
     <span class="setting-label">Goal (hours)</span>
-    <input type="number" id="settingsGoalHours" class="setting-input" value="100" min="1">
+    <div class="setting-value-wrap" id="goalHoursDisplayWrap">
+      <span class="setting-value-text" id="goalHoursValueText">100</span>
+      <button class="btn-small" id="goalHoursEditBtn">Change</button>
+    </div>
+    <div class="setting-value-wrap hidden" id="goalHoursEditWrap">
+      <input type="number" id="settingsGoalHours" class="setting-input" value="100" min="1">
+      <button class="btn-small" id="goalHoursSaveBtn">Save</button>
+    </div>
   </div>
   <div class="setting-row goal-setting-row" id="goalDeadlineRow">
     <span class="setting-label">Deadline</span>
-    <input type="date" id="settingsDeadline" class="setting-input">
+    <div class="setting-value-wrap" id="goalDeadlineDisplayWrap">
+      <span class="setting-value-text" id="goalDeadlineValueText">—</span>
+      <button class="btn-small" id="goalDeadlineEditBtn">Change</button>
+    </div>
+    <div class="setting-value-wrap hidden" id="goalDeadlineEditWrap">
+      <input type="date" id="settingsDeadline" class="setting-input">
+      <button class="btn-small" id="goalDeadlineSaveBtn">Save</button>
+    </div>
   </div>
   <div class="setting-row">
     <span class="setting-label">Contact Support</span>
@@ -351,6 +396,20 @@
     <div style="display:flex; gap:0.4rem;">
       <button class="btn-small" id="copyBinanceIdBtn" style="flex:1;">Copy Binance ID</button>
       <button class="btn-small" id="copyWalletAddrBtn" style="flex:1;">Copy Wallet</button>
+    </div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Advanced</span>
+    <button class="btn-small" id="advancedBtn">Advanced</button>
+  </div>
+  <div class="contact-panel hidden" id="advancedPanel" style="flex-direction:column; gap:0.5rem; align-items:stretch; text-align:left;">
+    <div style="font-size:0.72rem; color:var(--text-dim); line-height:1.5;">
+      <p style="margin-bottom:0.3rem; color:var(--text); font-weight:600; font-size:0.78rem;">Restore Lost Progress</p>
+      <p>Enter the total hours you've already completed. This will set your total study time and update the progress bar — everything else continues as normal.</p>
+    </div>
+    <div style="display:flex; gap:0.4rem; align-items:center;">
+      <input type="number" id="restoreHoursInput" class="setting-input" style="flex:1; width:auto; text-align:left;" placeholder="Hours completed" min="0" step="0.01">
+      <button class="btn-small" id="applyRestoreBtn">Apply</button>
     </div>
   </div>
   <button class="danger-btn" id="resetAllBtn">Reset All Progress</button>
@@ -497,6 +556,16 @@
   const settingsDeadline = document.getElementById('settingsDeadline');
   const goalHoursRow = document.getElementById('goalHoursRow');
   const goalDeadlineRow = document.getElementById('goalDeadlineRow');
+  const goalHoursValueText = document.getElementById('goalHoursValueText');
+  const goalHoursDisplayWrap = document.getElementById('goalHoursDisplayWrap');
+  const goalHoursEditWrap = document.getElementById('goalHoursEditWrap');
+  const goalHoursEditBtn = document.getElementById('goalHoursEditBtn');
+  const goalHoursSaveBtn = document.getElementById('goalHoursSaveBtn');
+  const goalDeadlineValueText = document.getElementById('goalDeadlineValueText');
+  const goalDeadlineDisplayWrap = document.getElementById('goalDeadlineDisplayWrap');
+  const goalDeadlineEditWrap = document.getElementById('goalDeadlineEditWrap');
+  const goalDeadlineEditBtn = document.getElementById('goalDeadlineEditBtn');
+  const goalDeadlineSaveBtn = document.getElementById('goalDeadlineSaveBtn');
   const contactBtn = document.getElementById('contactBtn');
   const contactPanel = document.getElementById('contactPanel');
   const copyEmailBtn = document.getElementById('copyEmailBtn');
@@ -595,8 +664,7 @@
     state.goalDeadline = goalHitNewDeadline.value || state.goalDeadline;
     state.goalHitAcked = false;
     state.deadlineHitAcked = false;
-    settingsGoalHours.value = state.goalHours;
-    settingsDeadline.value = state.goalDeadline;
+    syncGoalSettingsUI();
     goalHitOverlay.classList.remove('open');
     saveState();
     updateDisplay();
@@ -609,8 +677,27 @@
     saveState();
   });
 
+  // Once today's goal is exceeded, the original target stays visible (struck through) and this
+  // live-projected number takes over, showing what tomorrow-onward's daily requirement would be
+  // if you stopped right now. Refreshed periodically rather than every frame to keep it steady.
+  let projectedDailyGoalHours = null;
+  let lastProjectionRefresh = 0;
+  const PROJECTION_REFRESH_MS = 20000;
+
+  function computeProjectedDailyGoalHours() {
+    const now = Date.now();
+    const currentSessionMs = state.sessionRunning && !state.paused
+      ? state.sessionElapsed + (now - state.sessionStartTime)
+      : state.sessionElapsed;
+    const projectedTotalHours = (state.totalMs + currentSessionMs) / (1000 * 60 * 60);
+    const remaining = Math.max(0, state.goalHours - projectedTotalHours);
+    const days = getDaysRemaining();
+    if (days <= 0) return 0;
+    return remaining / days;
+  }
+
   function getTodayTotalMs() {
-    const now = performance.now();
+    const now = Date.now();
     const currentSession = state.sessionRunning && !state.paused ? state.sessionElapsed + (now - state.sessionStartTime) : state.sessionElapsed;
     return state.todayMs + currentSession;
   }
@@ -654,16 +741,26 @@
       dailyGoalTrack.classList.remove('hidden');
       const goalHours = getDailyGoalHours();
       const pct = goalHours > 0 ? (todayHours / goalHours) * 100 : 100;
-      dailyGoalValue.textContent = goalHours.toFixed(1) + 'h';
       const redWidth = Math.min(100, pct);
       const greenWidth = Math.min(100, Math.max(0, pct - 100));
       dailyGoalRed.style.width = redWidth + '%';
       dailyGoalRed.classList.toggle('full', redWidth >= 100);
       dailyGoalGreen.style.width = greenWidth + '%';
+
       if (pct >= 100) {
+        const nowTs = Date.now();
+        if (projectedDailyGoalHours === null || nowTs - lastProjectionRefresh >= PROJECTION_REFRESH_MS) {
+          projectedDailyGoalHours = computeProjectedDailyGoalHours();
+          lastProjectionRefresh = nowTs;
+        }
+        dailyGoalValue.innerHTML = '<span class="daily-goal-value-original">' + goalHours.toFixed(1) + 'h</span>'
+          + '<span class="daily-goal-value-arrow">\u2192</span>'
+          + '<span class="daily-goal-value-updated">' + projectedDailyGoalHours.toFixed(1) + 'h</span>';
         const over = todayHours - goalHours;
         dailyGoalSub.innerHTML = todayHours.toFixed(1) + ' hrs <span class="over">(+' + over.toFixed(1) + ' over)</span>';
       } else {
+        projectedDailyGoalHours = null;
+        dailyGoalValue.textContent = goalHours.toFixed(1) + 'h';
         dailyGoalSub.textContent = todayHours.toFixed(1) + ' / ' + goalHours.toFixed(1) + ' hrs';
       }
     } else {
@@ -675,7 +772,7 @@
   }
 
   function updateDisplay() {
-    const now = performance.now();
+    const now = Date.now();
     const sessionMs = state.sessionRunning && !state.paused
       ? state.sessionElapsed + (now - state.sessionStartTime)
       : state.sessionElapsed;
@@ -744,7 +841,7 @@
     if (!state.sessionRunning && !state.questionRunning && !state.countdownRunning) return;
     if (state.paused) return;
     state.paused = true;
-    state.pauseStart = performance.now();
+    state.pauseStart = Date.now();
     startBtn.textContent = 'Resume';
     pauseBtn.classList.add('hidden');
     cancelAnimationFrame(rafId);
@@ -752,7 +849,7 @@
 
   function resumeAll() {
     if (!state.paused) return;
-    const now = performance.now();
+    const now = Date.now();
     const pauseDuration = now - state.pauseStart;
     state.paused = false;
     state.pauseStart = 0;
@@ -790,12 +887,10 @@
   }
 
   function saveState() {
-    const now = performance.now();
-    const sessionAdd = state.sessionRunning && !state.paused ? (now - state.sessionStartTime) : 0;
     const payload = {
-      totalMs: state.totalMs + state.sessionElapsed + sessionAdd,
-      todayMs: state.todayMs + state.sessionElapsed + sessionAdd,
-      lastStudyDate: getTodayStr(),
+      totalMs: state.totalMs,
+      todayMs: state.todayMs,
+      lastStudyDate: state.lastStudyDate || getTodayStr(),
       theme: state.theme,
       mode: state.mode,
       countdownInitialMs: state.countdownInitialMs,
@@ -804,7 +899,18 @@
       hasGoal: state.hasGoal,
       goalHitAcked: state.goalHitAcked,
       deadlineHitAcked: state.deadlineHitAcked,
-      firstTime: false
+      firstTime: false,
+      // In-progress timer state, persisted so a pause/minimize/app-kill doesn't lose the running session
+      sessionRunning: state.sessionRunning,
+      sessionStartTime: state.sessionStartTime,
+      sessionElapsed: state.sessionElapsed,
+      questionRunning: state.questionRunning,
+      questionStartTime: state.questionStartTime,
+      questionElapsed: state.questionElapsed,
+      countdownRunning: state.countdownRunning,
+      countdownStartTime: state.countdownStartTime,
+      paused: state.paused,
+      pauseStart: state.pauseStart
     };
     localStorage.setItem('stackTimerState', JSON.stringify(payload));
   }
@@ -843,11 +949,23 @@
         state.todayMs = 0;
         state.lastStudyDate = getTodayStr();
       }
+      // Restore any in-progress session/question/countdown + pause state so backgrounding
+      // or the OS reloading the page never wipes a running or paused timer.
+      state.sessionRunning = data.sessionRunning || false;
+      state.sessionStartTime = data.sessionStartTime || 0;
+      state.sessionElapsed = data.sessionElapsed || 0;
+      state.questionRunning = data.questionRunning || false;
+      state.questionStartTime = data.questionStartTime || 0;
+      state.questionElapsed = data.questionElapsed || 0;
+      state.countdownRunning = data.countdownRunning || false;
+      state.countdownStartTime = data.countdownStartTime || 0;
+      state.paused = data.paused || false;
+      state.pauseStart = data.pauseStart || 0;
+
       document.body.setAttribute('data-theme', state.theme);
       if (state.theme === 'light') themeToggle.classList.add('active');
       goalToggle.classList.toggle('active', state.hasGoal);
-      settingsGoalHours.value = state.goalHours;
-      settingsDeadline.value = state.goalDeadline;
+      syncGoalSettingsUI();
       updateGoalRows();
       modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
       if (state.mode === 'countdown') {
@@ -857,8 +975,33 @@
         cdM.value = Math.floor((totalSec % 3600) / 60);
         cdS.value = totalSec % 60;
       }
+
+      const isRunning = state.sessionRunning || state.questionRunning || state.countdownRunning;
+      if (isRunning) {
+        timerDisplay.classList.add('running');
+        if (state.paused) {
+          startBtn.textContent = 'Resume';
+          pauseBtn.classList.add('hidden');
+        } else {
+          startBtn.textContent = 'Stop';
+          pauseBtn.classList.remove('hidden');
+          startLoop();
+        }
+      }
+
       updateDisplay();
     } catch (e) { console.error('Load failed', e); }
+  }
+
+  function syncGoalSettingsUI() {
+    settingsGoalHours.value = state.goalHours;
+    settingsDeadline.value = state.goalDeadline;
+    goalHoursValueText.textContent = state.goalHours + 'h';
+    goalDeadlineValueText.textContent = state.goalDeadline || '—';
+    goalHoursDisplayWrap.classList.remove('hidden');
+    goalHoursEditWrap.classList.add('hidden');
+    goalDeadlineDisplayWrap.classList.remove('hidden');
+    goalDeadlineEditWrap.classList.add('hidden');
   }
 
   function updateGoalRows() {
@@ -872,7 +1015,7 @@
   }
 
   function setMode(mode) {
-    const now = performance.now();
+    const now = Date.now();
     if (state.paused) {
       const pauseDuration = now - state.pauseStart;
       if (state.sessionRunning) state.sessionStartTime += pauseDuration;
@@ -923,9 +1066,10 @@
   startBtn.addEventListener('click', () => {
     if (state.paused) {
       resumeAll();
+      saveState();
       return;
     }
-    const now = performance.now();
+    const now = Date.now();
     if (state.mode === 'session') {
       if (state.sessionRunning) {
         stopSession(now);
@@ -943,6 +1087,7 @@
         timerDisplay.classList.add('running');
         rotateQuote();
         startLoop();
+        saveState();
       }
     } else if (state.mode === 'question') {
       if (state.questionRunning) {
@@ -967,6 +1112,7 @@
         pauseBtn.classList.remove('hidden');
         rotateQuote();
         startLoop();
+        saveState();
       }
     } else if (state.mode === 'countdown') {
       if (state.countdownRunning) {
@@ -989,16 +1135,18 @@
         pauseBtn.classList.remove('hidden');
         rotateQuote();
         startLoop();
+        saveState();
       }
     }
   });
 
   pauseBtn.addEventListener('click', () => {
     if (state.paused) resumeAll(); else pauseAll();
+    saveState();
   });
 
   resetBtn.addEventListener('click', () => {
-    const now = performance.now();
+    const now = Date.now();
     if (state.paused) {
       const pauseDuration = now - state.pauseStart;
       if (state.sessionRunning) state.sessionStartTime += pauseDuration;
@@ -1045,6 +1193,10 @@
     if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
       settingsPanel.classList.remove('open');
       contactPanel.classList.add('hidden');
+      goalHoursDisplayWrap.classList.remove('hidden');
+      goalHoursEditWrap.classList.add('hidden');
+      goalDeadlineDisplayWrap.classList.remove('hidden');
+      goalDeadlineEditWrap.classList.add('hidden');
     }
   });
 
@@ -1064,20 +1216,41 @@
     saveState();
   });
 
-  settingsGoalHours.addEventListener('change', () => {
+  function commitGoalHours() {
     state.goalHours = Math.max(1, parseInt(settingsGoalHours.value) || 100);
-    settingsGoalHours.value = state.goalHours;
     state.goalHitAcked = false;
+    syncGoalSettingsUI();
     updateDisplay();
     saveState();
+  }
+
+  function commitGoalDeadline() {
+    state.goalDeadline = settingsDeadline.value || state.goalDeadline;
+    state.deadlineHitAcked = false;
+    syncGoalSettingsUI();
+    updateDisplay();
+    saveState();
+  }
+
+  goalHoursEditBtn.addEventListener('click', () => {
+    goalHoursDisplayWrap.classList.add('hidden');
+    goalHoursEditWrap.classList.remove('hidden');
+    settingsGoalHours.value = state.goalHours;
+    settingsGoalHours.focus();
   });
 
-  settingsDeadline.addEventListener('change', () => {
-    state.goalDeadline = settingsDeadline.value;
-    state.deadlineHitAcked = false;
-    updateDisplay();
-    saveState();
+  goalHoursSaveBtn.addEventListener('click', commitGoalHours);
+  settingsGoalHours.addEventListener('keydown', (e) => { if (e.key === 'Enter') commitGoalHours(); });
+
+  goalDeadlineEditBtn.addEventListener('click', () => {
+    goalDeadlineDisplayWrap.classList.add('hidden');
+    goalDeadlineEditWrap.classList.remove('hidden');
+    settingsDeadline.value = state.goalDeadline;
+    settingsDeadline.focus();
   });
+
+  goalDeadlineSaveBtn.addEventListener('click', commitGoalDeadline);
+  settingsDeadline.addEventListener('keydown', (e) => { if (e.key === 'Enter') commitGoalDeadline(); });
 
   contactBtn.addEventListener('click', () => {
     contactPanel.classList.toggle('hidden');
@@ -1144,6 +1317,41 @@
     });
   }
 
+  // Advanced panel: restore lost progress
+  const advancedBtn = document.getElementById('advancedBtn');
+  const advancedPanel = document.getElementById('advancedPanel');
+  const restoreHoursInput = document.getElementById('restoreHoursInput');
+  const applyRestoreBtn = document.getElementById('applyRestoreBtn');
+
+  advancedBtn.addEventListener('click', () => {
+    advancedPanel.classList.toggle('hidden');
+  });
+
+  applyRestoreBtn.addEventListener('click', () => {
+    const hours = parseFloat(restoreHoursInput.value);
+    if (isNaN(hours) || hours < 0) {
+      alert('Please enter a valid number of hours (0 or more).');
+      return;
+    }
+    if (!confirm('Set total study time to ' + hours + ' hour(s)? This will overwrite your current total progress.')) {
+      return;
+    }
+    const ms = hours * 60 * 60 * 1000;
+    state.totalMs = ms;
+    // Re-baseline any in-progress session so it doesn't get double-counted on top of the restored total
+    state.sessionElapsed = 0;
+    if (state.sessionRunning) {
+      state.sessionStartTime = Date.now();
+    }
+    state.goalHitAcked = false;
+    state.deadlineHitAcked = false;
+    saveState();
+    updateDisplay();
+    restoreHoursInput.value = '';
+    applyRestoreBtn.textContent = 'Restored!';
+    setTimeout(() => applyRestoreBtn.textContent = 'Apply', 1500);
+  });
+
   resetAllBtn.addEventListener('click', () => {
     if (confirm('Are you sure? This will erase ALL study progress forever.')) {
       state.totalMs = 0;
@@ -1176,8 +1384,7 @@
     state.firstTime = false;
     state.goalHitAcked = false;
     state.deadlineHitAcked = false;
-    settingsGoalHours.value = state.goalHours;
-    settingsDeadline.value = state.goalDeadline;
+    syncGoalSettingsUI();
     goalToggle.classList.add('active');
     updateGoalRows();
     welcomeOverlay.classList.remove('open');
@@ -1200,7 +1407,18 @@
   }, 5000);
 
   document.addEventListener('visibilitychange', () => {
-    if (state.sessionRunning || state.questionRunning || state.countdownRunning) updateDisplay();
+    if (state.sessionRunning || state.questionRunning || state.countdownRunning) {
+      if (document.visibilityState === 'hidden') {
+        // Save immediately on backgrounding so a suspended/reloaded tab never loses a paused or running timer
+        saveState();
+      } else {
+        updateDisplay();
+      }
+    }
+  });
+
+  window.addEventListener('pagehide', () => {
+    if (state.sessionRunning || state.questionRunning || state.countdownRunning) saveState();
   });
 
   loadState();
