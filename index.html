@@ -353,6 +353,20 @@
       <button class="btn-small" id="copyWalletAddrBtn" style="flex:1;">Copy Wallet</button>
     </div>
   </div>
+  <div class="setting-row">
+    <span class="setting-label">Advanced</span>
+    <button class="btn-small" id="advancedBtn">Advanced</button>
+  </div>
+  <div class="contact-panel hidden" id="advancedPanel" style="flex-direction:column; gap:0.5rem; align-items:stretch; text-align:left;">
+    <div style="font-size:0.72rem; color:var(--text-dim); line-height:1.5;">
+      <p style="margin-bottom:0.3rem; color:var(--text); font-weight:600; font-size:0.78rem;">Restore Lost Progress</p>
+      <p>Enter the total hours you've already completed. This will set your total study time and update the progress bar — everything else continues as normal.</p>
+    </div>
+    <div style="display:flex; gap:0.4rem; align-items:center;">
+      <input type="number" id="restoreHoursInput" class="setting-input" style="flex:1; width:auto; text-align:left;" placeholder="Hours completed" min="0" step="0.01">
+      <button class="btn-small" id="applyRestoreBtn">Apply</button>
+    </div>
+  </div>
   <button class="danger-btn" id="resetAllBtn">Reset All Progress</button>
 </div>
 
@@ -1143,6 +1157,41 @@
       });
     });
   }
+
+  // Advanced panel: restore lost progress
+  const advancedBtn = document.getElementById('advancedBtn');
+  const advancedPanel = document.getElementById('advancedPanel');
+  const restoreHoursInput = document.getElementById('restoreHoursInput');
+  const applyRestoreBtn = document.getElementById('applyRestoreBtn');
+
+  advancedBtn.addEventListener('click', () => {
+    advancedPanel.classList.toggle('hidden');
+  });
+
+  applyRestoreBtn.addEventListener('click', () => {
+    const hours = parseFloat(restoreHoursInput.value);
+    if (isNaN(hours) || hours < 0) {
+      alert('Please enter a valid number of hours (0 or more).');
+      return;
+    }
+    if (!confirm('Set total study time to ' + hours + ' hour(s)? This will overwrite your current total progress.')) {
+      return;
+    }
+    const ms = hours * 60 * 60 * 1000;
+    state.totalMs = ms;
+    // Re-baseline any in-progress session so it doesn't get double-counted on top of the restored total
+    state.sessionElapsed = 0;
+    if (state.sessionRunning) {
+      state.sessionStartTime = performance.now();
+    }
+    state.goalHitAcked = false;
+    state.deadlineHitAcked = false;
+    saveState();
+    updateDisplay();
+    restoreHoursInput.value = '';
+    applyRestoreBtn.textContent = 'Restored!';
+    setTimeout(() => applyRestoreBtn.textContent = 'Apply', 1500);
+  });
 
   resetAllBtn.addEventListener('click', () => {
     if (confirm('Are you sure? This will erase ALL study progress forever.')) {
