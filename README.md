@@ -9,7 +9,7 @@ Stack was built by Ammar, an ACCA student, as a personal tool to study more cons
 Once deployed with GitHub Pages, your live link will be:
 
 ```
-https://ammar8bit.github.io/Stack/
+https://stacktime.me
 ```
 
 ## Features
