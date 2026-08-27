@@ -276,11 +276,11 @@
       <h3>Set Your Goal</h3>
       <div class="setup-row">
         <label>Goal (hours)</label>
-        <input type="number" id="setupGoal" value="100" min="1">
+        <input type="number" id="setupGoal" min="1" placeholder="e.g. 100">
       </div>
       <div class="setup-row">
         <label>Deadline</label>
-        <input type="date" id="setupDeadline" value="2026-09-05">
+        <input type="date" id="setupDeadline">
       </div>
       <button class="btn btn-main" id="setupStartBtn">Start Studying</button>
       <button class="btn btn-ghost" id="setupSkipBtn">Start Without Goal</button>
@@ -325,6 +325,25 @@
       </div>
       <button class="btn btn-main" id="goalHitSaveBtn">Set New Target</button>
       <button class="btn btn-ghost" id="goalHitContinueBtn">Keep Logging As Is</button>
+    </div>
+  </div>
+</div>
+
+<div class="welcome-overlay" id="goalSettingsOverlay" role="dialog" aria-modal="true" aria-labelledby="goalSettingsTitle">
+  <div class="welcome-card" style="max-width:400px;">
+    <button class="modal-close" id="goalSettingsCloseBtn" type="button" aria-label="Close">×</button>
+    <h1 id="goalSettingsTitle" style="font-size:1.7rem;">Set your goal</h1>
+    <p class="tagline">Choose a total study target and the date you want to reach it.</p>
+    <div class="welcome-setup">
+      <div class="setup-row">
+        <label>Goal (hours)</label>
+        <input type="number" id="goalSettingsHours" min="1" placeholder="e.g. 100">
+      </div>
+      <div class="setup-row">
+        <label>Deadline</label>
+        <input type="date" id="goalSettingsDeadline">
+      </div>
+      <button class="btn btn-main" id="goalSettingsSaveBtn" style="width:100%;">Save goal</button>
     </div>
   </div>
 </div>
@@ -487,7 +506,11 @@
     <button class="btn-small" id="accountBtn">Create / Sign in</button>
   </div>
   <div class="cloud-status" id="cloudStatus">Local only — progress stays on this device</div>
-  <div class="setting-row goal-setting-row" id="goalHoursRow">
+  <div class="setting-row goal-setting-row" id="goalManageRow">
+    <span class="setting-label">Goal &amp; deadline</span>
+    <button class="btn-small" id="goalManageBtn">Change</button>
+  </div>
+  <div class="setting-row goal-setting-row hidden" id="goalHoursRow">
     <span class="setting-label">Goal (hours)</span>
     <div class="setting-value-wrap" id="goalHoursDisplayWrap">
       <span class="setting-value-text" id="goalHoursValueText">100</span>
@@ -498,7 +521,7 @@
       <button class="btn-small" id="goalHoursSaveBtn">Save</button>
     </div>
   </div>
-  <div class="setting-row goal-setting-row" id="goalDeadlineRow">
+  <div class="setting-row goal-setting-row hidden" id="goalDeadlineRow">
     <span class="setting-label">Deadline</span>
     <div class="setting-value-wrap" id="goalDeadlineDisplayWrap">
       <span class="setting-value-text" id="goalDeadlineValueText">—</span>
@@ -655,7 +678,7 @@
     countdownRunning: false, countdownStartTime: 0, countdownInitialMs: 600000, countdownFinished: false,
     paused: false, pauseStart: 0,
     totalMs: 0, todayMs: 0, lastStudyDate: null,
-    goalHours: 100, goalDeadline: '2026-09-05', hasGoal: true,
+    goalHours: 0, goalDeadline: '', hasGoal: false,
     goalHitAcked: false, deadlineHitAcked: false,
     theme: 'dark', mode: 'session', firstTime: true
   };
@@ -699,6 +722,13 @@
   const settingsDeadline = document.getElementById('settingsDeadline');
   const goalHoursRow = document.getElementById('goalHoursRow');
   const goalDeadlineRow = document.getElementById('goalDeadlineRow');
+  const goalManageRow = document.getElementById('goalManageRow');
+  const goalManageBtn = document.getElementById('goalManageBtn');
+  const goalSettingsOverlay = document.getElementById('goalSettingsOverlay');
+  const goalSettingsCloseBtn = document.getElementById('goalSettingsCloseBtn');
+  const goalSettingsHours = document.getElementById('goalSettingsHours');
+  const goalSettingsDeadline = document.getElementById('goalSettingsDeadline');
+  const goalSettingsSaveBtn = document.getElementById('goalSettingsSaveBtn');
   const goalHoursValueText = document.getElementById('goalHoursValueText');
   const goalHoursDisplayWrap = document.getElementById('goalHoursDisplayWrap');
   const goalHoursEditWrap = document.getElementById('goalHoursEditWrap');
@@ -1366,9 +1396,9 @@
       state.theme = data.theme || 'dark';
       state.mode = data.mode || 'session';
       state.countdownInitialMs = data.countdownInitialMs || 600000;
-      state.goalHours = data.goalHours || 100;
-      state.goalDeadline = data.goalDeadline || '2026-09-05';
-      state.hasGoal = data.hasGoal !== undefined ? data.hasGoal : true;
+      state.goalHours = Number(data.goalHours) || 0;
+      state.goalDeadline = data.goalDeadline || '';
+      state.hasGoal = data.hasGoal !== undefined ? data.hasGoal : Boolean(state.goalHours && state.goalDeadline);
       state.goalHitAcked = data.goalHitAcked || false;
       state.deadlineHitAcked = data.deadlineHitAcked || false;
       state.firstTime = data.firstTime !== undefined ? data.firstTime : true;
@@ -1443,13 +1473,36 @@
   }
 
   function updateGoalRows() {
-    if (state.hasGoal) {
-      goalHoursRow.classList.remove('hidden');
-      goalDeadlineRow.classList.remove('hidden');
-    } else {
-      goalHoursRow.classList.add('hidden');
-      goalDeadlineRow.classList.add('hidden');
+    goalHoursRow.classList.add('hidden');
+    goalDeadlineRow.classList.add('hidden');
+    goalManageRow.classList.toggle('hidden', !state.hasGoal);
+  }
+
+  function openGoalSettingsModal() {
+    goalSettingsHours.value = state.goalHours || '';
+    goalSettingsDeadline.value = state.goalDeadline || '';
+    goalSettingsOverlay.classList.add('open');
+    goalSettingsHours.focus();
+  }
+
+  function saveGoalFromModal() {
+    const hours = parseInt(goalSettingsHours.value, 10);
+    const deadline = goalSettingsDeadline.value;
+    if (!Number.isInteger(hours) || hours < 1 || !deadline) {
+      alert('Enter a goal of at least 1 hour and choose a deadline.');
+      return;
     }
+    state.goalHours = hours;
+    state.goalDeadline = deadline;
+    state.hasGoal = true;
+    state.goalHitAcked = false;
+    state.deadlineHitAcked = false;
+    goalToggle.classList.add('active');
+    goalSettingsOverlay.classList.remove('open');
+    syncGoalSettingsUI();
+    updateGoalRows();
+    saveState();
+    updateDisplay();
   }
 
   function setMode(mode) {
@@ -1758,13 +1811,21 @@
   });
 
   goalToggle.addEventListener('click', () => {
-    state.hasGoal = !state.hasGoal;
-    if (state.hasGoal) { state.goalHitAcked = false; state.deadlineHitAcked = false; }
-    goalToggle.classList.toggle('active');
+    if (state.hasGoal) {
+      state.hasGoal = false;
+      goalToggle.classList.remove('active');
+    } else {
+      openGoalSettingsModal();
+      return;
+    }
     updateGoalRows();
     updateDisplay();
     saveState();
   });
+
+  goalManageBtn.addEventListener('click', openGoalSettingsModal);
+  goalSettingsCloseBtn.addEventListener('click', () => goalSettingsOverlay.classList.remove('open'));
+  goalSettingsSaveBtn.addEventListener('click', saveGoalFromModal);
 
   function commitGoalHours() {
     state.goalHours = Math.max(1, parseInt(settingsGoalHours.value) || 100);
@@ -1948,8 +2009,14 @@
   });
 
   setupStartBtn.addEventListener('click', () => {
-    state.goalHours = Math.max(1, parseInt(setupGoal.value) || 100);
-    state.goalDeadline = setupDeadline.value;
+    const hours = parseInt(setupGoal.value, 10);
+    const deadline = setupDeadline.value;
+    if (!Number.isInteger(hours) || hours < 1 || !deadline) {
+      alert('Enter a goal of at least 1 hour and choose a deadline, or select Start Without Goal.');
+      return;
+    }
+    state.goalHours = hours;
+    state.goalDeadline = deadline;
     state.hasGoal = true;
     state.firstTime = false;
     state.goalHitAcked = false;
