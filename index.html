@@ -89,7 +89,7 @@
   .brand-top-right { position:fixed; top:1.5rem; right:1.5rem; font-size:1.1rem; letter-spacing:0.5em; text-transform:uppercase; color:var(--text-dim); font-weight:400; z-index:10; opacity:0.75; pointer-events:none; }
   .welcome-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.7); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; padding:1.5rem; opacity:0; pointer-events:none; transition:opacity 0.4s; }
   .welcome-overlay.open { opacity:1; pointer-events:all; }
-  .welcome-card { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:2.2rem 2rem; max-width:460px; width:100%; box-shadow:var(--shadow); transform:translateY(20px); transition:transform 0.4s; max-height:90vh; overflow-y:auto; }
+  .welcome-card { position:relative; background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:2.2rem 2rem; max-width:460px; width:100%; box-shadow:var(--shadow); transform:translateY(20px); transition:transform 0.4s; max-height:90vh; overflow-y:auto; }
   .welcome-overlay.open .welcome-card { transform:translateY(0); }
   .welcome-card h1 { font-family:var(--font-timer); font-size:2.2rem; letter-spacing:0.05em; text-align:center; margin-bottom:0.3rem; color:var(--text); }
   .welcome-card .tagline { text-align:center; font-size:0.85rem; color:var(--text-dim); margin-bottom:1.5rem; font-weight:300; }
@@ -193,6 +193,13 @@
   .auth-form input { width:100%; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--text); padding:0.7rem 0.8rem; font-family:var(--font-body); font-size:0.9rem; outline:none; }
   .auth-form input:focus { border-color:var(--accent); }
   .auth-message { min-height:1.25rem; color:var(--text-dim); font-size:0.78rem; line-height:1.45; text-align:center; }
+  .modal-close { position:absolute; top:0.85rem; right:0.85rem; width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:var(--bg-glass); color:var(--text-dim); font-size:1.25rem; line-height:1; cursor:pointer; transition:all 0.2s; }
+  .modal-close:hover { color:#fff; background:var(--accent); border-color:var(--accent); }
+  .auth-step { animation:stepIn 0.35s ease both; }
+  @keyframes stepIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .auth-verification-icon { width:54px; height:54px; margin:0 auto 1rem; display:grid; place-items:center; border-radius:50%; color:var(--green); border:1px solid var(--green); font-size:1.5rem; box-shadow:0 0 18px var(--green-glow); }
+  .auth-divider { display:flex; align-items:center; gap:0.7rem; margin:0.9rem 0; color:var(--text-dim); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em; }
+  .auth-divider::before, .auth-divider::after { content:''; height:1px; flex:1; background:var(--border); }
   .cloud-status { color:var(--text-dim); font-size:0.72rem; margin-top:0.45rem; text-align:center; }
   .settings-btn { position:fixed; bottom:1.5rem; right:1.5rem; width:44px; height:44px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; backdrop-filter:blur(8px); transition:all 0.3s; z-index:10; }
   .settings-btn:hover { background:var(--accent); color:#fff; transform:rotate(30deg); }
@@ -324,6 +331,7 @@
 
 <div class="welcome-overlay" id="timerFinishedOverlay" role="alertdialog" aria-modal="true" aria-labelledby="timerFinishedTitle">
   <div class="welcome-card" style="max-width:380px; text-align:center;">
+    <button class="modal-close" id="timerFinishedTopCloseBtn" type="button" aria-label="Close">×</button>
     <h1 id="timerFinishedTitle" style="font-size:1.8rem;">Time's Up!</h1>
     <p class="tagline">Your countdown has reached zero.</p>
     <button class="btn btn-main" id="dismissTimerAlertBtn" style="width:100%;">Dismiss</button>
@@ -332,6 +340,7 @@
 
 <div class="welcome-overlay" id="aboutOverlay" role="dialog" aria-modal="true" aria-labelledby="aboutStacktimeTitle">
   <div class="welcome-card" style="max-width:760px;">
+    <button class="modal-close" id="aboutTopCloseBtn" type="button" aria-label="Close">×</button>
     <h1 id="aboutStacktimeTitle" style="font-size:1.8rem;">About StackTime</h1>
     <div class="about-content">
       <p>StackTime helps students build consistent study habits. Track a full study session, time individual practice questions, or run a custom countdown while your total study time keeps moving forward.</p>
@@ -347,32 +356,54 @@
         <details><summary>Where is my study progress stored?</summary><p>Your timer settings and progress are stored locally in your browser, so they are not sent to a server.</p></details>
       </div>
     </div>
-    <button class="btn btn-ghost" id="aboutCloseBtn" style="width:100%; margin-top:1.4rem;">Close</button>
   </div>
 </div>
 
 <div class="welcome-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
   <div class="welcome-card" style="max-width:390px;">
+    <button class="modal-close" id="authTopCloseBtn" type="button" aria-label="Close">×</button>
     <h1 id="authTitle" style="font-size:1.8rem;">Create your account</h1>
     <p class="tagline" id="authSubtitle">Back up your StackTime progress and access it on another device.</p>
-    <form class="auth-form" id="authForm">
-      <input type="email" id="authEmail" autocomplete="email" placeholder="Email address" required>
-      <input type="password" id="authPassword" autocomplete="new-password" placeholder="Password (at least 6 characters)" minlength="6" required>
-      <button class="btn btn-main" id="authSubmitBtn" type="submit" style="width:100%;">Create account</button>
-    </form>
-    <p class="auth-message" id="authMessage" aria-live="polite"></p>
-    <button class="btn btn-ghost" id="authModeBtn" type="button" style="width:100%; margin-top:0.5rem;">Already have an account? Sign in</button>
-    <button class="btn btn-ghost" id="authCloseBtn" type="button" style="width:100%; margin-top:0.6rem;">Continue without an account</button>
+    <div class="auth-step" id="authEntry">
+      <form class="auth-form" id="authForm">
+        <input type="email" id="authEmail" autocomplete="email" placeholder="Email address" required>
+        <input type="password" id="authPassword" autocomplete="new-password" placeholder="Password (at least 6 characters)" minlength="6" required>
+        <button class="btn btn-main" id="authSubmitBtn" type="submit" style="width:100%;">Create account</button>
+      </form>
+      <p class="auth-message" id="authMessage" aria-live="polite"></p>
+      <div class="auth-divider">or</div>
+      <button class="btn btn-ghost" id="googleAuthBtn" type="button" style="width:100%;">Continue with Google</button>
+      <button class="btn btn-ghost" id="authModeBtn" type="button" style="width:100%; margin-top:0.6rem;">Already have an account? Sign in</button>
+      <button class="btn btn-ghost" id="authCloseBtn" type="button" style="width:100%; margin-top:0.6rem;">Continue without an account</button>
+    </div>
+    <div class="auth-step hidden" id="authVerification">
+      <div class="auth-verification-icon">✓</div>
+      <p class="tagline" style="margin-bottom:0.7rem;">Your account is almost ready.</p>
+      <p class="auth-message" id="authVerificationMessage">Open the verification email we sent you, then click its confirmation link to finish.</p>
+      <button class="btn btn-ghost" id="authVerificationCloseBtn" type="button" style="width:100%; margin-top:1rem;">Continue locally for now</button>
+    </div>
   </div>
 </div>
 
 <div class="welcome-overlay" id="cloudChoiceOverlay" role="dialog" aria-modal="true" aria-labelledby="cloudChoiceTitle">
   <div class="welcome-card" style="max-width:430px;">
+    <button class="modal-close" id="cloudChoiceCloseBtn" type="button" aria-label="Close">×</button>
     <h1 id="cloudChoiceTitle" style="font-size:1.6rem;">Save your progress?</h1>
     <p class="tagline" id="cloudChoiceMessage"></p>
     <button class="btn btn-main" id="cloudPrimaryBtn" style="width:100%;">Upload to cloud</button>
     <button class="btn btn-ghost" id="cloudSecondaryBtn" style="width:100%; margin-top:0.6rem;">Keep local only</button>
     <button class="btn btn-ghost hidden" id="cloudTertiaryBtn" style="width:100%; margin-top:0.6rem;"></button>
+  </div>
+</div>
+
+<div class="welcome-overlay" id="accountOverlay" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+  <div class="welcome-card" style="max-width:390px; text-align:center;">
+    <button class="modal-close" id="accountCloseBtn" type="button" aria-label="Close">×</button>
+    <h1 id="accountTitle" style="font-size:1.7rem;">Your account</h1>
+    <p class="tagline" id="accountEmail"></p>
+    <p class="auth-message" id="accountCloudMessage"></p>
+    <button class="btn btn-main hidden" id="enableCloudBtn" type="button" style="width:100%;">Switch to cloud backup</button>
+    <button class="btn btn-ghost" id="accountSignOutBtn" type="button" style="width:100%; margin-top:0.7rem;">Sign out</button>
   </div>
 </div>
 
@@ -690,9 +721,10 @@
   const goalHitContinueBtn = document.getElementById('goalHitContinueBtn');
   const timerFinishedOverlay = document.getElementById('timerFinishedOverlay');
   const dismissTimerAlertBtn = document.getElementById('dismissTimerAlertBtn');
+  const timerFinishedTopCloseBtn = document.getElementById('timerFinishedTopCloseBtn');
   const aboutOverlay = document.getElementById('aboutOverlay');
   const aboutBtn = document.getElementById('aboutBtn');
-  const aboutCloseBtn = document.getElementById('aboutCloseBtn');
+  const aboutCloseBtn = document.getElementById('aboutTopCloseBtn');
   const accountLabel = document.getElementById('accountLabel');
   const accountBtn = document.getElementById('accountBtn');
   const cloudStatus = document.getElementById('cloudStatus');
@@ -705,13 +737,26 @@
   const authSubmitBtn = document.getElementById('authSubmitBtn');
   const authModeBtn = document.getElementById('authModeBtn');
   const authCloseBtn = document.getElementById('authCloseBtn');
+  const authTopCloseBtn = document.getElementById('authTopCloseBtn');
   const authMessage = document.getElementById('authMessage');
+  const authEntry = document.getElementById('authEntry');
+  const authVerification = document.getElementById('authVerification');
+  const authVerificationMessage = document.getElementById('authVerificationMessage');
+  const authVerificationCloseBtn = document.getElementById('authVerificationCloseBtn');
+  const googleAuthBtn = document.getElementById('googleAuthBtn');
   const cloudChoiceOverlay = document.getElementById('cloudChoiceOverlay');
   const cloudChoiceTitle = document.getElementById('cloudChoiceTitle');
   const cloudChoiceMessage = document.getElementById('cloudChoiceMessage');
   const cloudPrimaryBtn = document.getElementById('cloudPrimaryBtn');
   const cloudSecondaryBtn = document.getElementById('cloudSecondaryBtn');
   const cloudTertiaryBtn = document.getElementById('cloudTertiaryBtn');
+  const cloudChoiceCloseBtn = document.getElementById('cloudChoiceCloseBtn');
+  const accountOverlay = document.getElementById('accountOverlay');
+  const accountCloseBtn = document.getElementById('accountCloseBtn');
+  const accountEmail = document.getElementById('accountEmail');
+  const accountCloudMessage = document.getElementById('accountCloudMessage');
+  const enableCloudBtn = document.getElementById('enableCloudBtn');
+  const accountSignOutBtn = document.getElementById('accountSignOutBtn');
 
   const SUPABASE_URL = 'https://arvozknuyfqodotxgytt.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_N6TFSkBsQpyhDR-KAf5k9w_J24-VWLe';
@@ -1069,8 +1114,8 @@
     }
     accountBtn.disabled = false;
     if (cloudUser) {
-      accountLabel.textContent = cloudUser.email || 'Signed in';
-      accountBtn.textContent = 'Sign out';
+      accountLabel.textContent = 'Cloud Backup';
+      accountBtn.textContent = 'Account';
       cloudStatus.textContent = message || (cloudSyncEnabled ? 'Cloud backup is on' : 'Signed in — local-only mode');
     } else {
       accountLabel.textContent = 'Cloud Backup';
@@ -1604,16 +1649,15 @@
     authModeBtn.textContent = signingIn ? 'New here? Create an account' : 'Already have an account? Sign in';
     authPassword.autocomplete = signingIn ? 'current-password' : 'new-password';
     authMessage.textContent = '';
+    authEntry.classList.remove('hidden');
+    authVerification.classList.add('hidden');
     authOverlay.classList.add('open');
     authEmail.focus();
   }
 
-  accountBtn.addEventListener('click', async () => {
-    if (!cloudUser) {
-      openAuthOverlay('signup');
-      return;
-    }
-    if (!confirm('Sign out of ' + (cloudUser.email || 'this account') + '? Your progress will remain saved on this device.')) return;
+  async function signOutCurrentUser() {
+    if (!cloudUser) return;
+    if (!confirm('Sign out? Your progress will remain saved on this device.')) return;
     const { error } = await supabaseClient.auth.signOut();
     if (error) {
       updateAccountUI('Could not sign out. Please try again.');
@@ -1622,11 +1666,32 @@
     cloudUser = null;
     setCloudSyncEnabled(false);
     localStorage.removeItem('stackCloudUserId');
+    accountOverlay.classList.remove('open');
     updateAccountUI('Signed out — progress remains on this device');
+  }
+
+  function openAccountOverlay() {
+    accountEmail.textContent = cloudUser.email || 'Signed in';
+    accountCloudMessage.textContent = cloudSyncEnabled
+      ? 'Cloud backup is on. Your changes are saved to this account.'
+      : 'You are using this device locally. Switch on cloud backup whenever you are ready.';
+    enableCloudBtn.classList.toggle('hidden', cloudSyncEnabled);
+    accountOverlay.classList.add('open');
+  }
+
+  accountBtn.addEventListener('click', () => {
+    if (!cloudUser) {
+      openAuthOverlay('signup');
+      return;
+    }
+    openAccountOverlay();
   });
 
   authModeBtn.addEventListener('click', () => openAuthOverlay(authMode === 'signup' ? 'signin' : 'signup'));
-  authCloseBtn.addEventListener('click', () => authOverlay.classList.remove('open'));
+  const closeAuthOverlay = () => authOverlay.classList.remove('open');
+  authCloseBtn.addEventListener('click', closeAuthOverlay);
+  authTopCloseBtn.addEventListener('click', closeAuthOverlay);
+  authVerificationCloseBtn.addEventListener('click', closeAuthOverlay);
 
   authForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -1644,15 +1709,36 @@
       return;
     }
     if (authMode === 'signup' && !result.data.session) {
-      authMessage.textContent = 'Check your email and click the confirmation link to finish creating your account.';
+      authEntry.classList.add('hidden');
+      authVerification.classList.remove('hidden');
+      authTitle.textContent = 'Check your inbox';
+      authSubtitle.textContent = 'One last step before cloud backup is ready.';
+      authVerificationMessage.textContent = 'We sent a verification email to ' + email + '. Open it and click the confirmation link to finish creating your account.';
       return;
     }
     authOverlay.classList.remove('open');
   });
 
+  googleAuthBtn.addEventListener('click', async () => {
+    if (!supabaseClient) return;
+    authMessage.textContent = 'Opening Google sign-in…';
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) authMessage.textContent = error.message;
+  });
+
   cloudPrimaryBtn.addEventListener('click', () => cloudChoiceActions.primary && cloudChoiceActions.primary());
   cloudSecondaryBtn.addEventListener('click', () => cloudChoiceActions.secondary && cloudChoiceActions.secondary());
   cloudTertiaryBtn.addEventListener('click', () => cloudChoiceActions.tertiary && cloudChoiceActions.tertiary());
+  cloudChoiceCloseBtn.addEventListener('click', closeCloudChoice);
+  accountCloseBtn.addEventListener('click', () => accountOverlay.classList.remove('open'));
+  accountSignOutBtn.addEventListener('click', signOutCurrentUser);
+  enableCloudBtn.addEventListener('click', () => {
+    accountOverlay.classList.remove('open');
+    prepareCloudProgress();
+  });
   document.addEventListener('click', (e) => {
     if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
       settingsPanel.classList.remove('open');
@@ -1730,6 +1816,7 @@
   });
 
   dismissTimerAlertBtn.addEventListener('click', clearCountdownAlert);
+  timerFinishedTopCloseBtn.addEventListener('click', clearCountdownAlert);
 
   copyEmailBtn.addEventListener('click', () => {
     navigator.clipboard.writeText('ammarkhan5683@gmail.com').then(() => {
