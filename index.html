@@ -189,9 +189,14 @@
   .faq-list details { padding:0.75rem 0.85rem; background:var(--bg-glass); border:1px solid var(--border); border-radius:10px; }
   .faq-list summary { color:var(--text); cursor:pointer; font-weight:600; }
   .faq-list details p { margin-top:0.5rem; }
+  .auth-form { display:flex; flex-direction:column; gap:0.75rem; }
+  .auth-form input { width:100%; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--text); padding:0.7rem 0.8rem; font-family:var(--font-body); font-size:0.9rem; outline:none; }
+  .auth-form input:focus { border-color:var(--accent); }
+  .auth-message { min-height:1.25rem; color:var(--text-dim); font-size:0.78rem; line-height:1.45; text-align:center; }
+  .cloud-status { color:var(--text-dim); font-size:0.72rem; margin-top:0.45rem; text-align:center; }
   .settings-btn { position:fixed; bottom:1.5rem; right:1.5rem; width:44px; height:44px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; backdrop-filter:blur(8px); transition:all 0.3s; z-index:10; }
   .settings-btn:hover { background:var(--accent); color:#fff; transform:rotate(30deg); }
-  .settings-panel { position:fixed; bottom:4.5rem; right:1.5rem; background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.25rem; width:260px; backdrop-filter:blur(16px); box-shadow:var(--shadow); transform:translateY(10px); opacity:0; pointer-events:none; transition:all 0.3s; z-index:10; }
+  .settings-panel { position:fixed; bottom:4.5rem; right:1.5rem; background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.25rem; width:260px; max-height:calc(100vh - 6rem); overflow-y:auto; backdrop-filter:blur(16px); box-shadow:var(--shadow); transform:translateY(10px); opacity:0; pointer-events:none; transition:all 0.3s; z-index:10; }
   .settings-panel.open { transform:translateY(0); opacity:1; pointer-events:all; }
   .settings-panel h3 { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-bottom:1rem; }
   .setting-row { display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid var(--border); }
@@ -346,6 +351,31 @@
   </div>
 </div>
 
+<div class="welcome-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="welcome-card" style="max-width:390px;">
+    <h1 id="authTitle" style="font-size:1.8rem;">Create your account</h1>
+    <p class="tagline" id="authSubtitle">Back up your StackTime progress and access it on another device.</p>
+    <form class="auth-form" id="authForm">
+      <input type="email" id="authEmail" autocomplete="email" placeholder="Email address" required>
+      <input type="password" id="authPassword" autocomplete="new-password" placeholder="Password (at least 6 characters)" minlength="6" required>
+      <button class="btn btn-main" id="authSubmitBtn" type="submit" style="width:100%;">Create account</button>
+    </form>
+    <p class="auth-message" id="authMessage" aria-live="polite"></p>
+    <button class="btn btn-ghost" id="authModeBtn" type="button" style="width:100%; margin-top:0.5rem;">Already have an account? Sign in</button>
+    <button class="btn btn-ghost" id="authCloseBtn" type="button" style="width:100%; margin-top:0.6rem;">Continue without an account</button>
+  </div>
+</div>
+
+<div class="welcome-overlay" id="cloudChoiceOverlay" role="dialog" aria-modal="true" aria-labelledby="cloudChoiceTitle">
+  <div class="welcome-card" style="max-width:430px;">
+    <h1 id="cloudChoiceTitle" style="font-size:1.6rem;">Save your progress?</h1>
+    <p class="tagline" id="cloudChoiceMessage"></p>
+    <button class="btn btn-main" id="cloudPrimaryBtn" style="width:100%;">Upload to cloud</button>
+    <button class="btn btn-ghost" id="cloudSecondaryBtn" style="width:100%; margin-top:0.6rem;">Keep local only</button>
+    <button class="btn btn-ghost hidden" id="cloudTertiaryBtn" style="width:100%; margin-top:0.6rem;"></button>
+  </div>
+</div>
+
 <div class="daily-goal-widget" id="dailyGoalWidget">
   <div class="daily-goal-header">
     <span id="dailyGoalTitle">Today's Goal</span>
@@ -421,6 +451,11 @@
     <span class="setting-label">Goal Tracking</span>
     <div class="toggle" id="goalToggle"></div>
   </div>
+  <div class="setting-row">
+    <span class="setting-label" id="accountLabel">Cloud Backup</span>
+    <button class="btn-small" id="accountBtn">Create / Sign in</button>
+  </div>
+  <div class="cloud-status" id="cloudStatus">Local only — progress stays on this device</div>
   <div class="setting-row goal-setting-row" id="goalHoursRow">
     <span class="setting-label">Goal (hours)</span>
     <div class="setting-value-wrap" id="goalHoursDisplayWrap">
@@ -491,6 +526,7 @@
   <button class="danger-btn" id="resetAllBtn">Reset All Progress</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function() {
 
@@ -657,6 +693,40 @@
   const aboutOverlay = document.getElementById('aboutOverlay');
   const aboutBtn = document.getElementById('aboutBtn');
   const aboutCloseBtn = document.getElementById('aboutCloseBtn');
+  const accountLabel = document.getElementById('accountLabel');
+  const accountBtn = document.getElementById('accountBtn');
+  const cloudStatus = document.getElementById('cloudStatus');
+  const authOverlay = document.getElementById('authOverlay');
+  const authForm = document.getElementById('authForm');
+  const authTitle = document.getElementById('authTitle');
+  const authSubtitle = document.getElementById('authSubtitle');
+  const authEmail = document.getElementById('authEmail');
+  const authPassword = document.getElementById('authPassword');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authModeBtn = document.getElementById('authModeBtn');
+  const authCloseBtn = document.getElementById('authCloseBtn');
+  const authMessage = document.getElementById('authMessage');
+  const cloudChoiceOverlay = document.getElementById('cloudChoiceOverlay');
+  const cloudChoiceTitle = document.getElementById('cloudChoiceTitle');
+  const cloudChoiceMessage = document.getElementById('cloudChoiceMessage');
+  const cloudPrimaryBtn = document.getElementById('cloudPrimaryBtn');
+  const cloudSecondaryBtn = document.getElementById('cloudSecondaryBtn');
+  const cloudTertiaryBtn = document.getElementById('cloudTertiaryBtn');
+
+  const SUPABASE_URL = 'https://arvozknuyfqodotxgytt.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_N6TFSkBsQpyhDR-KAf5k9w_J24-VWLe';
+  let supabaseClient = null;
+  let cloudUser = null;
+  let cloudSyncEnabled = localStorage.getItem('stackCloudSyncEnabled') === 'true';
+  let cloudSaveTimer = null;
+  let authMode = 'signup';
+  let cloudChoiceActions = {};
+
+  try {
+    if (window.supabase && window.supabase.createClient) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    }
+  } catch (e) { console.warn('Cloud backup is unavailable', e); }
 
   for (let i = 0; i < 30; i++) {
     const s = document.createElement('span');
@@ -972,6 +1042,189 @@
     timerDisplay.classList.remove('warning', 'finished');
   }
 
+  function getCloudProgressData() {
+    return {
+      totalMs: state.totalMs,
+      todayMs: state.todayMs,
+      lastStudyDate: state.lastStudyDate,
+      theme: state.theme,
+      mode: state.mode,
+      countdownInitialMs: state.countdownInitialMs,
+      goalHours: state.goalHours,
+      goalDeadline: state.goalDeadline,
+      hasGoal: state.hasGoal,
+      goalHitAcked: state.goalHitAcked,
+      deadlineHitAcked: state.deadlineHitAcked,
+      firstTime: state.firstTime
+    };
+  }
+
+  function updateAccountUI(message) {
+    if (!supabaseClient) {
+      accountLabel.textContent = 'Cloud Backup';
+      accountBtn.textContent = 'Unavailable';
+      accountBtn.disabled = true;
+      cloudStatus.textContent = 'Cloud backup could not load. Local progress still works.';
+      return;
+    }
+    accountBtn.disabled = false;
+    if (cloudUser) {
+      accountLabel.textContent = cloudUser.email || 'Signed in';
+      accountBtn.textContent = 'Sign out';
+      cloudStatus.textContent = message || (cloudSyncEnabled ? 'Cloud backup is on' : 'Signed in — local-only mode');
+    } else {
+      accountLabel.textContent = 'Cloud Backup';
+      accountBtn.textContent = 'Create / Sign in';
+      cloudStatus.textContent = message || 'Local only — progress stays on this device';
+    }
+  }
+
+  function setCloudSyncEnabled(enabled) {
+    cloudSyncEnabled = enabled;
+    localStorage.setItem('stackCloudSyncEnabled', String(enabled));
+    if (cloudUser) localStorage.setItem('stackCloudUserId', cloudUser.id);
+    updateAccountUI();
+  }
+
+  function hasLocalProgress() {
+    return state.totalMs > 0 || state.todayMs > 0;
+  }
+
+  function applyCloudProgress(data) {
+    if (!data || typeof data !== 'object') return;
+    state.totalMs = Number(data.totalMs) || 0;
+    state.todayMs = Number(data.todayMs) || 0;
+    state.lastStudyDate = data.lastStudyDate || getTodayStr();
+    if (state.lastStudyDate !== getTodayStr()) {
+      state.todayMs = 0;
+      state.lastStudyDate = getTodayStr();
+    }
+    state.theme = data.theme === 'light' ? 'light' : 'dark';
+    state.mode = ['session', 'question', 'countdown'].includes(data.mode) ? data.mode : 'session';
+    state.countdownInitialMs = Number(data.countdownInitialMs) || 600000;
+    state.goalHours = Number(data.goalHours) || 100;
+    state.goalDeadline = data.goalDeadline || '2026-09-05';
+    state.hasGoal = data.hasGoal !== undefined ? Boolean(data.hasGoal) : true;
+    state.goalHitAcked = Boolean(data.goalHitAcked);
+    state.deadlineHitAcked = Boolean(data.deadlineHitAcked);
+    state.firstTime = data.firstTime !== undefined ? Boolean(data.firstTime) : false;
+    state.sessionRunning = false;
+    state.questionRunning = false;
+    state.countdownRunning = false;
+    state.countdownFinished = false;
+    state.paused = false;
+    document.body.setAttribute('data-theme', state.theme);
+    themeToggle.classList.toggle('active', state.theme === 'light');
+    goalToggle.classList.toggle('active', state.hasGoal);
+    modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
+    countdownSetup.classList.toggle('hidden', state.mode !== 'countdown');
+    syncGoalSettingsUI();
+    updateGoalRows();
+    updateDisplay();
+  }
+
+  async function saveCloudProgress() {
+    if (!supabaseClient || !cloudUser || !cloudSyncEnabled) return;
+    updateAccountUI('Saving to cloud…');
+    const { error } = await supabaseClient.from('user_progress').upsert({
+      user_id: cloudUser.id,
+      data: getCloudProgressData(),
+      updated_at: new Date().toISOString()
+    });
+    if (error) {
+      console.error('Cloud save failed', error);
+      updateAccountUI('Cloud save failed — your progress is still stored locally');
+      return;
+    }
+    updateAccountUI('Saved to cloud');
+  }
+
+  function queueCloudSave() {
+    if (!cloudUser || !cloudSyncEnabled) return;
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(saveCloudProgress, 700);
+  }
+
+  async function getCloudProgress() {
+    const { data, error } = await supabaseClient
+      .from('user_progress')
+      .select('data, updated_at')
+      .eq('user_id', cloudUser.id)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  function closeCloudChoice() {
+    cloudChoiceOverlay.classList.remove('open');
+    cloudChoiceActions = {};
+  }
+
+  function showCloudChoice({ title, message, primary, secondary, tertiary }) {
+    cloudChoiceTitle.textContent = title;
+    cloudChoiceMessage.textContent = message;
+    cloudPrimaryBtn.textContent = primary.label;
+    cloudSecondaryBtn.textContent = secondary.label;
+    cloudTertiaryBtn.textContent = tertiary ? tertiary.label : '';
+    cloudTertiaryBtn.classList.toggle('hidden', !tertiary);
+    cloudChoiceActions = { primary: primary.action, secondary: secondary.action, tertiary: tertiary && tertiary.action };
+    cloudChoiceOverlay.classList.add('open');
+  }
+
+  async function uploadLocalProgress() {
+    setCloudSyncEnabled(true);
+    await saveCloudProgress();
+    closeCloudChoice();
+  }
+
+  function keepProgressLocal() {
+    setCloudSyncEnabled(false);
+    closeCloudChoice();
+  }
+
+  async function prepareCloudProgress() {
+    if (!cloudUser || !supabaseClient) return;
+    try {
+      updateAccountUI('Checking cloud backup…');
+      const cloudRecord = await getCloudProgress();
+      const hasCloudProgress = Boolean(cloudRecord && cloudRecord.data);
+      const sameAccountAsBefore = localStorage.getItem('stackCloudUserId') === cloudUser.id;
+
+      if (sameAccountAsBefore && cloudSyncEnabled) {
+        if (hasCloudProgress) applyCloudProgress(cloudRecord.data);
+        else await uploadLocalProgress();
+        updateAccountUI('Cloud backup is on');
+        return;
+      }
+
+      if (hasCloudProgress && hasLocalProgress()) {
+        showCloudChoice({
+          title: 'Choose your progress',
+          message: 'This device and your account both have saved progress. Choose which version to use.',
+          primary: { label: 'Use cloud progress', action: async () => { applyCloudProgress(cloudRecord.data); setCloudSyncEnabled(true); saveState(); closeCloudChoice(); } },
+          secondary: { label: 'Upload this device’s progress', action: uploadLocalProgress },
+          tertiary: { label: 'Keep local only', action: keepProgressLocal }
+        });
+      } else if (hasCloudProgress) {
+        applyCloudProgress(cloudRecord.data);
+        setCloudSyncEnabled(true);
+        saveState();
+      } else if (hasLocalProgress()) {
+        showCloudChoice({
+          title: 'Save your local progress?',
+          message: 'You have progress saved on this device. Upload it to your new account or continue using StackTime locally.',
+          primary: { label: 'Upload to cloud', action: uploadLocalProgress },
+          secondary: { label: 'Keep local only', action: keepProgressLocal }
+        });
+      } else {
+        await uploadLocalProgress();
+      }
+    } catch (e) {
+      console.error('Cloud backup setup failed', e);
+      updateAccountUI('Cloud setup needed — run supabase-setup.sql, then try again');
+    }
+  }
+
   let titleFlashId = null;
   const defaultDocumentTitle = document.title;
 
@@ -1051,6 +1304,7 @@
       pauseStart: state.pauseStart
     };
     localStorage.setItem('stackTimerState', JSON.stringify(payload));
+    queueCloudSave();
   }
 
   function loadState() {
@@ -1338,6 +1592,67 @@
     e.stopPropagation();
     settingsPanel.classList.toggle('open');
   });
+
+  function openAuthOverlay(mode) {
+    authMode = mode;
+    const signingIn = mode === 'signin';
+    authTitle.textContent = signingIn ? 'Welcome back' : 'Create your account';
+    authSubtitle.textContent = signingIn
+      ? 'Sign in to access your StackTime cloud backup.'
+      : 'Back up your StackTime progress and access it on another device.';
+    authSubmitBtn.textContent = signingIn ? 'Sign in' : 'Create account';
+    authModeBtn.textContent = signingIn ? 'New here? Create an account' : 'Already have an account? Sign in';
+    authPassword.autocomplete = signingIn ? 'current-password' : 'new-password';
+    authMessage.textContent = '';
+    authOverlay.classList.add('open');
+    authEmail.focus();
+  }
+
+  accountBtn.addEventListener('click', async () => {
+    if (!cloudUser) {
+      openAuthOverlay('signup');
+      return;
+    }
+    if (!confirm('Sign out of ' + (cloudUser.email || 'this account') + '? Your progress will remain saved on this device.')) return;
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      updateAccountUI('Could not sign out. Please try again.');
+      return;
+    }
+    cloudUser = null;
+    setCloudSyncEnabled(false);
+    localStorage.removeItem('stackCloudUserId');
+    updateAccountUI('Signed out — progress remains on this device');
+  });
+
+  authModeBtn.addEventListener('click', () => openAuthOverlay(authMode === 'signup' ? 'signin' : 'signup'));
+  authCloseBtn.addEventListener('click', () => authOverlay.classList.remove('open'));
+
+  authForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!supabaseClient) return;
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
+    authSubmitBtn.disabled = true;
+    authMessage.textContent = authMode === 'signup' ? 'Creating your account…' : 'Signing you in…';
+    const result = authMode === 'signup'
+      ? await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + window.location.pathname } })
+      : await supabaseClient.auth.signInWithPassword({ email, password });
+    authSubmitBtn.disabled = false;
+    if (result.error) {
+      authMessage.textContent = result.error.message;
+      return;
+    }
+    if (authMode === 'signup' && !result.data.session) {
+      authMessage.textContent = 'Check your email and click the confirmation link to finish creating your account.';
+      return;
+    }
+    authOverlay.classList.remove('open');
+  });
+
+  cloudPrimaryBtn.addEventListener('click', () => cloudChoiceActions.primary && cloudChoiceActions.primary());
+  cloudSecondaryBtn.addEventListener('click', () => cloudChoiceActions.secondary && cloudChoiceActions.secondary());
+  cloudTertiaryBtn.addEventListener('click', () => cloudChoiceActions.tertiary && cloudChoiceActions.tertiary());
   document.addEventListener('click', (e) => {
     if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
       settingsPanel.classList.remove('open');
@@ -1594,6 +1909,27 @@
     welcomeOverlay.classList.add('open');
   }
   updateDisplay();
+  updateAccountUI();
+
+  if (supabaseClient) {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        cloudUser = null;
+        setCloudSyncEnabled(false);
+        localStorage.removeItem('stackCloudUserId');
+        updateAccountUI('Signed out — progress remains on this device');
+        return;
+      }
+      if (session && session.user) {
+        const userChanged = !cloudUser || cloudUser.id !== session.user.id;
+        cloudUser = session.user;
+        updateAccountUI('Signed in — choosing progress…');
+        if (userChanged || event === 'INITIAL_SESSION') {
+          setTimeout(() => prepareCloudProgress(), 0);
+        }
+      }
+    });
+  }
 
   setInterval(() => {
     if (state.sessionRunning || state.questionRunning || state.countdownRunning) rotateQuote();
