@@ -3,23 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stack — Study Timer</title>
-<meta name="description" content="Stack is a free study timer that tracks your hours, sets daily goals from your deadline, and keeps you honest. Start a session and watch your progress stack up.">
+<title>StackTime — Free Study Timer & Daily Goal Tracker</title>
+<meta name="description" content="StackTime is a free study timer and daily goal tracker for students. Track sessions, time practice questions, and stay on pace for your exam deadline—no account required.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://stacktime.me/">
 
 <!-- Open Graph / WhatsApp / LinkedIn / Facebook link preview -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Stack — Study Timer">
-<meta property="og:description" content="A study timer that keeps you accountable. Set a goal, hit start, and watch your hours stack up.">
-<meta property="og:image" content="https://ammar8bit.github.io/Stack/assets/og-image.png">
+<meta property="og:title" content="StackTime — Free Study Timer & Daily Goal Tracker">
+<meta property="og:description" content="Track study sessions, time practice questions, and stay on pace for your exam deadline. Free, private, and account-free.">
+<meta property="og:image" content="https://stacktime.me/assets/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="https://ammar8bit.github.io/Stack/">
+<meta property="og:url" content="https://stacktime.me/">
 
 <!-- Twitter/X card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Stack — Study Timer">
-<meta name="twitter:description" content="A study timer that keeps you accountable. Set a goal, hit start, and watch your hours stack up.">
-<meta name="twitter:image" content="https://ammar8bit.github.io/Stack/assets/og-image.png">
+<meta name="twitter:title" content="StackTime — Free Study Timer & Daily Goal Tracker">
+<meta name="twitter:description" content="A free, private study timer that helps students stay on pace for their goals.">
+<meta name="twitter:image" content="https://stacktime.me/assets/og-image.png">
 
 <!-- Favicon / bookmark / homescreen icons -->
 <link rel="icon" href="assets/favicon.ico" sizes="any">
@@ -29,6 +31,32 @@
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <link rel="manifest" href="assets/site.webmanifest">
 <meta name="theme-color" content="#1a0a0a">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "StackTime",
+  "alternateName": "Stack",
+  "url": "https://stacktime.me/",
+  "description": "A free, browser-based study timer and daily goal tracker for students preparing for exams, certifications, and coursework.",
+  "applicationCategory": "ProductivityApplication",
+  "operatingSystem": "Web",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "Study session timer",
+    "Practice question timer",
+    "Custom countdown timer",
+    "Daily study goals based on a deadline",
+    "Private browser-based storage"
+  ]
+}
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,6 +177,19 @@
   .progress-bar-fill { height:100%; background:var(--accent); border-radius:3px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); box-shadow:0 0 10px var(--accent-glow); }
   .total-time { font-size:0.9rem; color:var(--text-dim); text-align:center; margin-top:0.25rem; }
   .total-time span { color:var(--accent); font-weight:600; }
+  .site-info { width:100%; max-width:760px; margin-top:1.5rem; padding:1.6rem; background:var(--bg-card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); line-height:1.65; }
+  .site-info h1, .site-info h2, .site-info h3 { color:var(--text); }
+  .site-info h1 { font-family:var(--font-timer); font-size:clamp(1.55rem,4vw,2.25rem); letter-spacing:0.025em; line-height:1.1; margin-bottom:0.75rem; }
+  .site-info h2 { font-size:1rem; margin:1.6rem 0 0.75rem; }
+  .site-info h3 { font-size:0.9rem; margin-bottom:0.35rem; }
+  .site-info p, .site-info details { color:var(--text-dim); font-size:0.9rem; }
+  .site-info-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:0.8rem; margin-top:1.25rem; }
+  .site-info article { padding:0.9rem; background:var(--bg-glass); border:1px solid var(--border); border-radius:10px; }
+  .site-info article p { font-size:0.8rem; }
+  .faq-list { display:grid; gap:0.55rem; }
+  .faq-list details { padding:0.75rem 0.85rem; background:var(--bg-glass); border:1px solid var(--border); border-radius:10px; }
+  .faq-list summary { color:var(--text); cursor:pointer; font-weight:600; }
+  .faq-list details p { margin-top:0.5rem; }
   .settings-btn { position:fixed; bottom:1.5rem; right:1.5rem; width:44px; height:44px; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; backdrop-filter:blur(8px); transition:all 0.3s; z-index:10; }
   .settings-btn:hover { background:var(--accent); color:#fff; transform:rotate(30deg); }
   .settings-panel { position:fixed; bottom:4.5rem; right:1.5rem; background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.25rem; width:260px; backdrop-filter:blur(16px); box-shadow:var(--shadow); transform:translateY(10px); opacity:0; pointer-events:none; transition:all 0.3s; z-index:10; }
@@ -195,6 +236,8 @@
     .btn-icon { width:46px; height:46px; font-size:1rem; }
     .settings-panel { width:calc(100vw - 2rem); max-width:260px; right:1rem; bottom:4rem; }
     .settings-btn { bottom:1rem; right:1rem; }
+    .site-info { padding:1.2rem; margin-top:0.8rem; }
+    .site-info-grid { grid-template-columns:1fr; }
   }
   @media (max-width:360px) {
     .timer-display { font-size:clamp(2.2rem, 15vw, 5rem); }
@@ -288,7 +331,7 @@
   <div class="daily-goal-sub" id="dailyGoalSub">0.0 / 0.0 hrs</div>
 </div>
 
-<div class="container">
+<main class="container">
   <div class="quote-box" id="quoteBox">
     <div class="quote-text" id="quoteText">"The secret of getting ahead is getting started."</div>
     <div class="quote-author" id="quoteAuthor">— Mark Twain</div>
@@ -336,7 +379,45 @@
     </div>
     <div class="total-time" id="totalTimeEl">Total Study Time: <span id="totalTime">0h 0m 0s</span></div>
   </div>
-</div>
+
+  <section class="site-info" aria-labelledby="about-stacktime">
+    <h1 id="about-stacktime">StackTime: a free study timer and daily goal tracker</h1>
+    <p>StackTime helps students build consistent study habits. Track a full study session, time individual practice questions, or run a custom countdown while your total study time keeps moving forward.</p>
+
+    <div class="site-info-grid">
+      <article>
+        <h3>Stay on pace</h3>
+        <p>Set a total-hours target and deadline to see the study time you need each day.</p>
+      </article>
+      <article>
+        <h3>Practice with intent</h3>
+        <p>Time individual questions while keeping your wider study session running.</p>
+      </article>
+      <article>
+        <h3>Private by default</h3>
+        <p>No account is required. Your settings and progress stay in your browser.</p>
+      </article>
+    </div>
+
+    <section aria-labelledby="stacktime-faq">
+      <h2 id="stacktime-faq">Frequently asked questions</h2>
+      <div class="faq-list">
+        <details>
+          <summary>Is StackTime free?</summary>
+          <p>Yes. StackTime is free to use and does not require an account or subscription.</p>
+        </details>
+        <details>
+          <summary>Who is StackTime for?</summary>
+          <p>It is designed for students preparing for exams, certifications, coursework, and other long-term study goals.</p>
+        </details>
+        <details>
+          <summary>Where is my study progress stored?</summary>
+          <p>Your timer settings and progress are stored locally in your browser, so they are not sent to a server.</p>
+        </details>
+      </div>
+    </section>
+  </section>
+</main>
 
 <button class="settings-btn" id="settingsBtn">&#x2699;</button>
 
