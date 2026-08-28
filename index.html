@@ -2067,7 +2067,6 @@
 
     const context = cursorTrail.getContext('2d');
     const trail = [];
-    const ripples = [];
     const pointer = { x: 0, y: 0, lastMove: 0, visible: false };
     const reactionItems = Array.from(ambient.children).map(element => ({
       element,
@@ -2079,9 +2078,7 @@
       strength: element.classList.contains('dot') ? 18 : (element.classList.contains('orb') ? 30 : 20)
     }));
     const trailLifetime = 620;
-    const rippleLifetime = 760;
     let frameId = null;
-    let lastRipple = { x: 0, y: 0, createdAt: 0 };
     let trailColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
 
     function resizeTrail() {
@@ -2115,45 +2112,25 @@
     function drawTrail(now) {
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
       while (trail.length && now - trail[0].createdAt > trailLifetime) trail.shift();
-      while (ripples.length && now - ripples[0].createdAt > rippleLifetime) ripples.shift();
+      if (trail.length < 2) return;
 
       context.lineCap = 'round';
       context.lineJoin = 'round';
       context.shadowColor = trailColor;
+      context.shadowBlur = 10;
 
-      function strokeTrail(baseWidth, addedWidth, opacity, blur) {
-        context.shadowBlur = blur;
-        for (let index = 1; index < trail.length; index++) {
-          const point = trail[index];
-          const previous = trail[index - 1];
-          const life = Math.max(0, 1 - ((now - point.createdAt) / trailLifetime));
-          context.beginPath();
-          context.moveTo(previous.x, previous.y);
-          context.lineTo(point.x, point.y);
-          context.strokeStyle = trailColor;
-          context.globalAlpha = life * opacity;
-          context.lineWidth = baseWidth + (life * addedWidth);
-          context.stroke();
-        }
-      }
-
-      // A soft, broad wake makes the trail feel fluid without overpowering the timer.
-      strokeTrail(4, 13, 0.12, 18);
-
-      context.shadowBlur = 8;
-      ripples.forEach(ripple => {
-        const progress = Math.min(1, (now - ripple.createdAt) / rippleLifetime);
-        const radius = 4 + (progress * 22);
+      for (let index = 1; index < trail.length; index++) {
+        const point = trail[index];
+        const previous = trail[index - 1];
+        const life = Math.max(0, 1 - ((now - point.createdAt) / trailLifetime));
         context.beginPath();
-        context.ellipse(ripple.x, ripple.y, radius * 1.25, radius * 0.58, ripple.angle, 0, Math.PI * 2);
+        context.moveTo(previous.x, previous.y);
+        context.lineTo(point.x, point.y);
         context.strokeStyle = trailColor;
-        context.globalAlpha = Math.sin(progress * Math.PI) * 0.22;
-        context.lineWidth = 1.4 - (progress * 0.6);
+        context.globalAlpha = life * 0.48;
+        context.lineWidth = 0.7 + (life * 3.2);
         context.stroke();
-      });
-
-      // Keep a brighter tapered centre so the cursor path still reads clearly.
-      strokeTrail(1.2, 4.8, 0.58, 8);
+      }
       context.globalAlpha = 1;
       context.shadowBlur = 0;
     }
@@ -2170,7 +2147,7 @@
         item.element.style.translate = item.x.toFixed(2) + 'px ' + item.y.toFixed(2) + 'px';
       });
 
-      if (trail.length || ripples.length || !particlesSettled) {
+      if (trail.length || !particlesSettled) {
         frameId = requestAnimationFrame(renderPointerEffects);
       } else {
         frameId = null;
@@ -2198,18 +2175,6 @@
         });
       }
       if (trail.length > 80) trail.splice(0, trail.length - 80);
-
-      const rippleDistance = Math.hypot(event.clientX - lastRipple.x, event.clientY - lastRipple.y);
-      if (previous && rippleDistance > 42 && now - lastRipple.createdAt > 55) {
-        ripples.push({
-          x: event.clientX,
-          y: event.clientY,
-          angle: Math.atan2(event.clientY - previous.y, event.clientX - previous.x),
-          createdAt: now
-        });
-        if (ripples.length > 16) ripples.shift();
-        lastRipple = { x: event.clientX, y: event.clientY, createdAt: now };
-      }
 
       pointer.x = event.clientX;
       pointer.y = event.clientY;
