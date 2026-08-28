@@ -79,7 +79,8 @@
   body { font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     transition:background 0.5s, color 0.5s; overflow-x:hidden; overflow-y:auto; position:relative; }
-  .ambient { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .ambient { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; will-change:transform; }
+  .background-hover-surface { position:fixed; inset:0; z-index:0; }
   .ambient .dot { position:absolute; border-radius:50%; background:var(--accent); opacity:0.25; animation:floatDot 10s infinite ease-in-out; }
   @keyframes floatDot { 0%,100%{transform:translateY(0) scale(1); opacity:0.15} 50%{transform:translateY(-60px) scale(1.4); opacity:0.4} }
   .ambient .orb { position:absolute; border-radius:50%; background:radial-gradient(circle,var(--accent) 0%,transparent 70%); opacity:0.12; filter:blur(20px); animation:driftOrb 20s infinite ease-in-out alternate; }
@@ -129,7 +130,7 @@
   .quote-box { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.25rem 1.5rem; text-align:center; backdrop-filter:blur(12px); box-shadow:var(--shadow); min-height:80px; display:flex; flex-direction:column; justify-content:center; gap:0.5rem; width:100%; max-width:600px; transition:all 0.5s; }
   .quote-text { font-size:1rem; font-style:italic; color:var(--text); line-height:1.5; transition:opacity 0.3s; }
   .quote-author { font-size:0.8rem; color:var(--text-dim); font-weight:500; transition:opacity 0.3s; }
-  .timer-display { font-family:var(--font-timer); font-size:clamp(7rem,18vw,13rem); line-height:0.95; letter-spacing:0.06em; color:var(--text); text-shadow:0 0 50px var(--accent-glow); transition:all 0.3s; user-select:none; text-align:center; width:100%; }
+  .timer-display { font-family:var(--font-timer); font-size:clamp(7rem,18vw,13rem); line-height:0.95; letter-spacing:0.06em; color:var(--text); text-shadow:0 0 50px var(--accent-glow); transition:all 0.3s; user-select:none; text-align:center; width:100%; will-change:transform; }
   .timer-display.running { text-shadow:0 0 70px var(--accent-glow), 0 0 140px var(--accent-glow); }
   .timer-display.warning { color:var(--orange); text-shadow:0 0 50px rgba(251,146,60,0.4); }
   .timer-display.finished { color:var(--green); text-shadow:0 0 60px var(--green-glow); animation:finishPulse 1s ease-in-out 3; }
@@ -259,6 +260,7 @@
 <body data-theme="dark">
 
 <div class="ambient" id="ambient"></div>
+<div class="background-hover-surface" id="backgroundHoverSurface" aria-hidden="true"></div>
 <div class="brand-top-right">Stack</div>
 
 <div class="welcome-overlay" id="welcomeOverlay">
@@ -581,6 +583,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/motion@13.1.1/dist/motion.js"></script>
 <script>
 (function() {
 
@@ -702,6 +705,7 @@
   const goalToggle = document.getElementById('goalToggle');
   const resetAllBtn = document.getElementById('resetAllBtn');
   const ambient = document.getElementById('ambient');
+  const backgroundHoverSurface = document.getElementById('backgroundHoverSurface');
   const countdownSetup = document.getElementById('countdownSetup');
   const cdH = document.getElementById('cdH');
   const cdM = document.getElementById('cdM');
@@ -2058,7 +2062,27 @@
     if (state.sessionRunning || state.questionRunning || state.countdownRunning) saveState();
   });
 
+  function setupHoverAnimations() {
+    if (!window.Motion || !backgroundHoverSurface || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const { animate, hover } = window.Motion;
+    const backgroundTransition = { type: 'spring', stiffness: 90, damping: 22 };
+    const timerTransition = { type: 'spring', stiffness: 340, damping: 24 };
+
+    hover(backgroundHoverSurface, () => {
+      animate(ambient, { scale: 1.018 }, backgroundTransition);
+      return () => animate(ambient, { scale: 1 }, backgroundTransition);
+    });
+
+    hover(timerDisplay, () => {
+      if (state.countdownFinished) return;
+      animate(timerDisplay, { scale: 1.018, y: -2 }, timerTransition);
+      return () => animate(timerDisplay, { scale: 1, y: 0 }, timerTransition);
+    });
+  }
+
   loadState();
+  setupHoverAnimations();
   if (state.firstTime) {
     welcomeOverlay.classList.add('open');
   }
