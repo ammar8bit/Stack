@@ -79,13 +79,13 @@
   body { font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     transition:background 0.5s, color 0.5s; overflow-x:hidden; overflow-y:auto; position:relative; }
-  .ambient { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; will-change:transform; }
-  .background-hover-surface { position:fixed; inset:0; z-index:0; }
-  .ambient .dot { position:absolute; border-radius:50%; background:var(--accent); opacity:0.25; animation:floatDot 10s infinite ease-in-out; }
+  .ambient { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .cursor-trail { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+  .ambient .dot { position:absolute; border-radius:50%; background:var(--accent); opacity:0.25; animation:floatDot 10s infinite ease-in-out; will-change:transform,translate; }
   @keyframes floatDot { 0%,100%{transform:translateY(0) scale(1); opacity:0.15} 50%{transform:translateY(-60px) scale(1.4); opacity:0.4} }
-  .ambient .orb { position:absolute; border-radius:50%; background:radial-gradient(circle,var(--accent) 0%,transparent 70%); opacity:0.12; filter:blur(20px); animation:driftOrb 20s infinite ease-in-out alternate; }
+  .ambient .orb { position:absolute; border-radius:50%; background:radial-gradient(circle,var(--accent) 0%,transparent 70%); opacity:0.12; filter:blur(20px); animation:driftOrb 20s infinite ease-in-out alternate; will-change:transform,translate; }
   @keyframes driftOrb { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-40px) scale(1.2)} 66%{transform:translate(-20px,20px) scale(0.9)} 100%{transform:translate(10px,-10px) scale(1.1)} }
-  .ambient .blob { position:absolute; width:300px; height:300px; border-radius:50%; background:var(--accent); opacity:0.06; filter:blur(80px); animation:blobMove 25s infinite ease-in-out; }
+  .ambient .blob { position:absolute; width:300px; height:300px; border-radius:50%; background:var(--accent); opacity:0.06; filter:blur(80px); animation:blobMove 25s infinite ease-in-out; will-change:transform,translate; }
   @keyframes blobMove { 0%,100%{transform:translate(0,0) scale(1)} 25%{transform:translate(100px,-80px) scale(1.3)} 50%{transform:translate(-60px,60px) scale(0.8)} 75%{transform:translate(40px,40px) scale(1.1)} }
   .brand-top-right { position:fixed; top:1.5rem; right:1.5rem; font-size:1.1rem; letter-spacing:0.5em; text-transform:uppercase; color:var(--text-dim); font-weight:400; z-index:10; opacity:0.75; pointer-events:none; }
   .welcome-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.7); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; padding:1.5rem; opacity:0; pointer-events:none; transition:opacity 0.4s; }
@@ -260,7 +260,7 @@
 <body data-theme="dark">
 
 <div class="ambient" id="ambient"></div>
-<div class="background-hover-surface" id="backgroundHoverSurface" aria-hidden="true"></div>
+<canvas class="cursor-trail" id="cursorTrail" aria-hidden="true"></canvas>
 <div class="brand-top-right">Stack</div>
 
 <div class="welcome-overlay" id="welcomeOverlay">
@@ -705,7 +705,7 @@
   const goalToggle = document.getElementById('goalToggle');
   const resetAllBtn = document.getElementById('resetAllBtn');
   const ambient = document.getElementById('ambient');
-  const backgroundHoverSurface = document.getElementById('backgroundHoverSurface');
+  const cursorTrail = document.getElementById('cursorTrail');
   const countdownSetup = document.getElementById('countdownSetup');
   const cdH = document.getElementById('cdH');
   const cdM = document.getElementById('cdM');
@@ -2062,27 +2062,150 @@
     if (state.sessionRunning || state.questionRunning || state.countdownRunning) saveState();
   });
 
-  function setupHoverAnimations() {
-    if (!window.Motion || !backgroundHoverSurface || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function setupPointerInteractions() {
+    if (!cursorTrail || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const { animate, hover } = window.Motion;
-    const backgroundTransition = { type: 'spring', stiffness: 90, damping: 22 };
-    const timerTransition = { type: 'spring', stiffness: 340, damping: 24 };
+    const context = cursorTrail.getContext('2d');
+    const trail = [];
+    const pointer = { x: 0, y: 0, lastMove: 0, visible: false };
+    const reactionItems = Array.from(ambient.children).map(element => ({
+      element,
+      x: 0,
+      y: 0,
+      targetX: 0,
+      targetY: 0,
+      range: element.classList.contains('dot') ? 185 : 275,
+      strength: element.classList.contains('dot') ? 18 : (element.classList.contains('orb') ? 30 : 20)
+    }));
+    const trailLifetime = 620;
+    let frameId = null;
+    let trailColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
 
-    hover(backgroundHoverSurface, () => {
-      animate(ambient, { scale: 1.018 }, backgroundTransition);
-      return () => animate(ambient, { scale: 1 }, backgroundTransition);
+    function resizeTrail() {
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      cursorTrail.width = Math.round(window.innerWidth * pixelRatio);
+      cursorTrail.height = Math.round(window.innerHeight * pixelRatio);
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    }
+
+    function updateReactionTargets(now) {
+      const moving = pointer.visible && now - pointer.lastMove < 115;
+      reactionItems.forEach(item => {
+        if (!moving) {
+          item.targetX = 0;
+          item.targetY = 0;
+          return;
+        }
+
+        const centerX = item.element.offsetLeft + (item.element.offsetWidth / 2);
+        const centerY = item.element.offsetTop + (item.element.offsetHeight / 2);
+        const dx = centerX - pointer.x;
+        const dy = centerY - pointer.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        const influence = Math.max(0, 1 - (distance / item.range));
+        const force = influence * influence * item.strength;
+        item.targetX = (dx / distance) * force;
+        item.targetY = (dy / distance) * force;
+      });
+    }
+
+    function drawTrail(now) {
+      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      while (trail.length && now - trail[0].createdAt > trailLifetime) trail.shift();
+      if (trail.length < 2) return;
+
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+      context.shadowColor = trailColor;
+      context.shadowBlur = 10;
+
+      for (let index = 1; index < trail.length; index++) {
+        const point = trail[index];
+        const previous = trail[index - 1];
+        const life = Math.max(0, 1 - ((now - point.createdAt) / trailLifetime));
+        context.beginPath();
+        context.moveTo(previous.x, previous.y);
+        context.lineTo(point.x, point.y);
+        context.strokeStyle = trailColor;
+        context.globalAlpha = life * 0.48;
+        context.lineWidth = 0.7 + (life * 3.2);
+        context.stroke();
+      }
+      context.globalAlpha = 1;
+      context.shadowBlur = 0;
+    }
+
+    function renderPointerEffects(now) {
+      updateReactionTargets(now);
+      drawTrail(now);
+
+      let particlesSettled = true;
+      reactionItems.forEach(item => {
+        item.x += (item.targetX - item.x) * 0.11;
+        item.y += (item.targetY - item.y) * 0.11;
+        if (Math.abs(item.x) > 0.05 || Math.abs(item.y) > 0.05) particlesSettled = false;
+        item.element.style.translate = item.x.toFixed(2) + 'px ' + item.y.toFixed(2) + 'px';
+      });
+
+      if (trail.length || !particlesSettled) {
+        frameId = requestAnimationFrame(renderPointerEffects);
+      } else {
+        frameId = null;
+        context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      }
+    }
+
+    function startRendering() {
+      if (frameId === null) frameId = requestAnimationFrame(renderPointerEffects);
+    }
+
+    window.addEventListener('pointermove', event => {
+      if (event.pointerType && event.pointerType !== 'mouse') return;
+      const now = performance.now();
+      const previous = trail[trail.length - 1];
+      const distance = previous ? Math.hypot(event.clientX - previous.x, event.clientY - previous.y) : 0;
+      const steps = previous ? Math.min(8, Math.max(1, Math.ceil(distance / 12))) : 1;
+
+      for (let step = 1; step <= steps; step++) {
+        const amount = step / steps;
+        trail.push({
+          x: previous ? previous.x + ((event.clientX - previous.x) * amount) : event.clientX,
+          y: previous ? previous.y + ((event.clientY - previous.y) * amount) : event.clientY,
+          createdAt: now
+        });
+      }
+      if (trail.length > 80) trail.splice(0, trail.length - 80);
+
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      pointer.lastMove = now;
+      pointer.visible = true;
+      trailColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      startRendering();
+    }, { passive: true });
+
+    document.documentElement.addEventListener('mouseleave', () => {
+      pointer.visible = false;
+      pointer.lastMove = 0;
+      startRendering();
     });
 
-    hover(timerDisplay, () => {
-      if (state.countdownFinished) return;
-      animate(timerDisplay, { scale: 1.018, y: -2 }, timerTransition);
-      return () => animate(timerDisplay, { scale: 1, y: 0 }, timerTransition);
-    });
+    window.addEventListener('resize', resizeTrail, { passive: true });
+    resizeTrail();
+
+    if (window.Motion) {
+      const { animate, hover } = window.Motion;
+      const timerTransition = { type: 'spring', stiffness: 340, damping: 24 };
+      hover(timerDisplay, () => {
+        if (state.countdownFinished) return;
+        animate(timerDisplay, { scale: 1.012, y: -2 }, timerTransition);
+        return () => animate(timerDisplay, { scale: 1, y: 0 }, timerTransition);
+      });
+    }
   }
 
   loadState();
-  setupHoverAnimations();
+  setupPointerInteractions();
   if (state.firstTime) {
     welcomeOverlay.classList.add('open');
   }
