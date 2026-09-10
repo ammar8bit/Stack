@@ -4,6 +4,7 @@
   --muted: #6c6b63;
   --line: #d9d6cd;
   --red: #8f2926;
+  --edge: clamp(20px, 5vw, 80px);
 }
 * {
   box-sizing: border-box;
@@ -16,10 +17,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font:
-    15px/1.7 Inter,
-    Arial,
-    sans-serif;
+  font: clamp(14px, 0.9vw + 8px, 17px) / 1.7 Inter, Arial, sans-serif;
 }
 a {
   color: inherit;
@@ -74,7 +72,7 @@ h2 {
   line-height: 1.08;
 }
 h3 {
-  font-size: 21px;
+  font-size: clamp(18px, 1.2vw + 6px, 24px);
   line-height: 1.35;
   letter-spacing: -0.7px;
 }
@@ -82,15 +80,16 @@ em {
   font-style: normal;
   color: var(--red);
 }
+
+/* ── FULL-WIDTH LAYOUT ── */
 header,
 main,
 footer {
-  max-width: 1440px;
-  margin: auto;
+  width: 100%;
 }
 header {
-  height: 92px;
-  padding: 0 5%;
+  height: clamp(70px, 6vw, 100px);
+  padding: 0 var(--edge);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -98,7 +97,7 @@ header {
 }
 .brand {
   font-weight: 700;
-  font-size: 20px;
+  font-size: clamp(18px, 1.2vw + 6px, 22px);
   letter-spacing: -1px;
   text-decoration: none;
   display: flex;
@@ -121,7 +120,7 @@ header {
 .art-label,
 figcaption,
 .prompt-bar {
-  font-size: 10px;
+  font-size: clamp(9px, 0.5vw + 5px, 11px);
   font-weight: 600;
   letter-spacing: 1.5px;
 }
@@ -129,7 +128,7 @@ figcaption,
   color: var(--muted);
 }
 .header-link {
-  font-size: 12px;
+  font-size: clamp(11px, 0.7vw + 4px, 14px);
   text-decoration: none;
 }
 .progress {
@@ -143,8 +142,10 @@ figcaption,
   transform-origin: left;
   z-index: 30;
 }
+
+/* ── HERO ── */
 .hero {
-  padding: 38px 5% 58px;
+  padding: clamp(24px, 3vw, 48px) var(--edge) clamp(40px, 4vw, 68px);
 }
 .eyebrow {
   display: flex;
@@ -166,18 +167,18 @@ figcaption,
 .hero-grid {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
-  gap: 55px;
+  gap: clamp(25px, 4vw, 65px);
   align-items: center;
-  margin-top: 32px;
+  margin-top: clamp(24px, 2.5vw, 38px);
 }
 h1 {
-  font-size: clamp(58px, 6.7vw, 96px);
+  font-size: clamp(52px, 6.5vw, 110px);
   letter-spacing: -2px;
 }
 .intro {
-  font-size: 23px;
+  font-size: clamp(19px, 1.4vw + 8px, 28px);
   line-height: 1.45;
-  margin-top: 27px;
+  margin-top: clamp(20px, 2vw, 30px);
   color: var(--ink);
   letter-spacing: -0.7px;
 }
@@ -186,23 +187,23 @@ h1 {
   color: var(--red);
 }
 .hero-desc {
-  max-width: 420px;
-  font-size: 14px;
+  max-width: 520px;
+  font-size: clamp(13px, 0.8vw + 6px, 16px);
 }
 .actions {
   display: flex;
   align-items: center;
-  gap: 25px;
-  margin: 28px 0;
+  gap: clamp(16px, 2vw, 28px);
+  margin: clamp(20px, 2vw, 32px) 0;
 }
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  gap: 28px;
-  padding: 14px 20px;
+  gap: clamp(16px, 2vw, 32px);
+  padding: clamp(12px, 1vw + 4px, 18px) clamp(16px, 1.2vw + 6px, 26px);
   text-decoration: none;
-  font-size: 12px;
+  font-size: clamp(12px, 0.7vw + 5px, 15px);
   font-weight: 600;
   border: 1px solid var(--line);
 }
@@ -216,22 +217,22 @@ h1 {
   color: white;
 }
 .text-link {
-  font-size: 12px;
+  font-size: clamp(11px, 0.7vw + 4px, 14px);
   font-weight: 600;
 }
 .hero-meta {
   display: flex;
-  gap: 20px;
+  gap: clamp(12px, 1.5vw, 24px);
   color: var(--muted);
-  font-size: 9px;
+  font-size: clamp(8px, 0.5vw + 4px, 10px);
   letter-spacing: 0.7px;
   border-top: 1px solid var(--line);
-  padding-top: 20px;
+  padding-top: clamp(14px, 1.5vw, 22px);
 }
 .hero-art {
   position: relative;
   isolation: isolate;
-  height: 480px;
+  height: clamp(320px, 32vw, 560px);
   overflow: hidden;
   background: #242724;
 }
@@ -273,25 +274,27 @@ h1 {
   color: #fff;
   font-size: 9px;
 }
+
+/* ── SCREENING ── */
 .screening {
   background: #22241f;
   color: #f6f4ee;
   display: grid;
   grid-template-columns: 1fr 1.85fr;
-  gap: 60px;
-  padding: 48px 5%;
+  gap: clamp(30px, 4vw, 70px);
+  padding: clamp(32px, 3.5vw, 56px) var(--edge);
   align-items: center;
 }
 .screening h2 {
-  font-size: 42px;
+  font-size: clamp(32px, 2.8vw + 6px, 52px);
   margin-top: 17px;
 }
 .screening p {
   color: #bfc1b7;
-  font-size: 13px;
+  font-size: clamp(12px, 0.8vw + 5px, 15px);
 }
 .screening .small {
-  font-size: 11px;
+  font-size: clamp(10px, 0.6vw + 4px, 12px);
 }
 .screening video {
   display: block;
@@ -303,14 +306,16 @@ h1 {
   display: flex;
   justify-content: space-between;
   margin-top: 12px;
-  font-size: 8px;
+  font-size: clamp(7px, 0.4vw + 4px, 9px);
   color: #bfc1b7;
 }
+
+/* ── GUIDE LAYOUT ── */
 .guide-layout {
   display: grid;
-  grid-template-columns: 235px minmax(0, 1fr);
-  gap: 70px;
-  padding: 80px 5% 0;
+  grid-template-columns: clamp(200px, 16vw, 280px) minmax(0, 1fr);
+  gap: clamp(35px, 5vw, 80px);
+  padding: clamp(48px, 5vw, 90px) var(--edge) 0;
 }
 .contents {
   position: sticky;
@@ -321,9 +326,9 @@ nav {
   margin-top: 25px;
 }
 nav a {
-  padding: 11px 0;
+  padding: clamp(9px, 0.7vw + 3px, 13px) 0;
   text-decoration: none;
-  font-size: 11px;
+  font-size: clamp(10px, 0.6vw + 4px, 13px);
   border-bottom: 1px solid var(--line);
   display: flex;
   gap: 16px;
@@ -340,7 +345,7 @@ nav a:hover {
   color: var(--red);
 }
 .aside-note {
-  font-size: 18px;
+  font-size: clamp(16px, 1.1vw + 5px, 22px);
   line-height: 1.5;
   margin: 34px 0 22px;
   color: var(--muted);
@@ -350,9 +355,11 @@ nav a:hover {
   font-weight: 500;
   color: var(--ink);
 }
+
+/* ── STEPS ── */
 .step {
-  padding-bottom: 65px;
-  margin-bottom: 60px;
+  padding-bottom: clamp(40px, 4vw, 70px);
+  margin-bottom: clamp(36px, 4vw, 65px);
   border-bottom: 1px solid var(--line);
 }
 .step-label {
@@ -370,26 +377,26 @@ nav a:hover {
   font-size: 11px;
 }
 .step h2 {
-  font-size: 42px;
+  font-size: clamp(32px, 2.8vw + 6px, 52px);
   letter-spacing: -0.5px;
 }
 .step > p {
-  max-width: 750px;
+  max-width: 800px;
 }
 .small {
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
 }
 .check-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 25px;
   margin: 25px 0;
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
 }
 .reference-strip {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: clamp(8px, 1vw, 16px);
   margin: 28px 0 20px;
 }
 .reference-strip img {
@@ -403,11 +410,11 @@ nav a:hover {
   color: var(--muted);
 }
 .note {
-  padding: 18px 20px;
+  padding: clamp(14px, 1.2vw + 4px, 22px) clamp(16px, 1.2vw + 6px, 24px);
   border-left: 2px solid var(--red);
   background: #eeece4;
   color: var(--muted);
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
 }
 .note strong {
   display: block;
@@ -419,8 +426,8 @@ nav a:hover {
 }
 .reference-step {
   display: grid;
-  grid-template-columns: 210px 1fr;
-  gap: 30px;
+  grid-template-columns: clamp(140px, 14vw, 250px) 1fr;
+  gap: clamp(18px, 2vw, 36px);
   margin: 28px 0;
   align-items: center;
 }
@@ -437,18 +444,18 @@ nav a:hover {
   font-family: monospace;
   color: var(--red);
   letter-spacing: 0;
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
 }
 .reference-step h3 {
   margin: 10px 0;
 }
 .reference-step p {
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
 }
 .specs {
   display: grid;
   gap: 0;
-  font-size: 11px;
+  font-size: clamp(10px, 0.55vw + 4px, 12px);
   color: var(--muted);
 }
 .specs span {
@@ -460,7 +467,7 @@ nav a:hover {
   align-items: center;
   gap: 10px;
   margin-top: 14px;
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
 }
 .tip {
   position: relative;
@@ -485,12 +492,14 @@ nav a:hover {
   background: var(--ink);
   color: white;
   padding: 18px;
-  width: 260px;
+  width: clamp(200px, 18vw, 300px);
   box-shadow: 0 5px 20px #0002;
   z-index: 10;
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
   font-weight: 400;
 }
+
+/* ── PROMPTS + COPY BUTTONS ── */
 .prompt {
   border: 1px solid var(--line);
   margin-top: 25px;
@@ -500,34 +509,37 @@ nav a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 15px 18px;
-  font-size: 9px;
+  gap: clamp(10px, 1vw, 16px);
+  padding: clamp(14px, 1vw + 6px, 22px) clamp(16px, 1.2vw + 6px, 24px);
+  font-size: clamp(9px, 0.5vw + 5px, 11px);
   letter-spacing: 1px;
 }
 .copy {
-  border: 1px solid var(--line);
-  background: transparent;
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 600;
+  border: 2px solid var(--red);
+  background: var(--red);
+  color: #fff;
+  padding: clamp(10px, 0.8vw + 4px, 16px) clamp(16px, 1vw + 8px, 24px);
+  font-size: clamp(12px, 0.7vw + 5px, 15px);
+  font-weight: 700;
   white-space: nowrap;
-  min-width: 125px;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, border-color 0.15s;
 }
 .copy:hover {
-  background: var(--ink);
+  background: #6f211f;
+  border-color: #6f211f;
   color: white;
 }
 .copy.copied {
-  background: var(--red);
+  background: var(--ink);
   color: white;
-  border-color: var(--red);
+  border-color: var(--ink);
 }
 .prompt summary,
 .interface summary {
   border-top: 1px solid var(--line);
-  padding: 13px 18px;
-  font-size: 11px;
+  padding: clamp(11px, 0.8vw + 4px, 16px) clamp(16px, 1.2vw + 6px, 24px);
+  font-size: clamp(10px, 0.6vw + 4px, 12px);
   list-style: none;
   display: flex;
   justify-content: space-between;
@@ -543,21 +555,21 @@ nav a:hover {
   transform: rotate(45deg);
 }
 .prompt pre {
-  font:
-    11px/1.8 "Courier New",
-    monospace;
+  font: clamp(10px, 0.55vw + 5px, 13px) / 1.8 "Courier New", monospace;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  padding: 20px;
+  padding: clamp(16px, 1.2vw + 6px, 24px);
   margin: 0;
   border-top: 1px solid var(--line);
-  max-height: 480px;
+  max-height: clamp(360px, 32vw, 560px);
   overflow: auto;
 }
+
+/* ── DOWNLOADS ── */
 .downloads {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: clamp(14px, 1.4vw, 24px);
   margin-top: 28px;
 }
 .downloads article {
@@ -569,7 +581,7 @@ nav a:hover {
   object-fit: cover;
 }
 .downloads article > div {
-  padding: 20px;
+  padding: clamp(14px, 1.4vw, 24px);
 }
 .downloads h3 {
   margin-top: 10px;
@@ -578,23 +590,25 @@ nav a:hover {
   margin-top: 0;
 }
 .downloads p {
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
   min-height: 40px;
 }
 .downloads .button {
   width: 100%;
-  padding: 12px 14px;
+  padding: clamp(10px, 0.8vw + 4px, 16px) clamp(12px, 1vw + 4px, 18px);
 }
 .downloads small {
   display: block;
   margin-top: 8px;
-  font-size: 10px;
+  font-size: clamp(9px, 0.5vw + 4px, 11px);
   color: var(--muted);
 }
+
+/* ── UPLOAD MAP ── */
 .upload-map {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: clamp(8px, 1vw, 16px);
   margin: 30px 0 20px;
 }
 .upload-map img {
@@ -610,13 +624,13 @@ nav a:hover {
 }
 .upload-map code {
   color: var(--red);
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
 }
 .upload-map strong {
-  font-size: 12px;
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
 }
 .upload-map span {
-  font-size: 10px;
+  font-size: clamp(9px, 0.5vw + 4px, 11px);
   color: var(--muted);
   font-weight: 400;
 }
@@ -627,11 +641,13 @@ nav a:hover {
   margin-top: 16px;
   border: 1px solid var(--line);
 }
+
+/* ── RULES ── */
 .rules {
   display: flex;
-  gap: 20px;
+  gap: clamp(14px, 1.4vw, 24px);
   margin-top: 25px;
-  padding: 20px 0;
+  padding: clamp(16px, 1.4vw, 24px) 0;
   border-block: 1px solid var(--line);
 }
 .rules > div {
@@ -640,18 +656,20 @@ nav a:hover {
   flex: 1;
 }
 .rules b {
-  font: 22px Anton;
+  font: clamp(18px, 1.4vw + 4px, 26px) Anton;
   color: var(--red);
 }
 .rules span {
-  font-size: 10px;
+  font-size: clamp(9px, 0.5vw + 4px, 11px);
   color: var(--muted);
 }
+
+/* ── REVIEW ── */
 .review {
   margin-top: 35px;
 }
 .review p {
-  font-size: 13px;
+  font-size: clamp(12px, 0.8vw + 4px, 15px);
 }
 .review label {
   display: flex;
@@ -663,20 +681,22 @@ nav a:hover {
   width: 16px;
   height: 16px;
 }
+
+/* ── CLOSING + FOOTER ── */
 .closing {
   text-align: center;
-  padding: 20px 5% 85px;
+  padding: clamp(16px, 1.4vw, 24px) var(--edge) clamp(50px, 5vw, 100px);
 }
 .closing .eyebrow {
   justify-content: center;
 }
 .closing h2 {
-  font-size: 68px;
+  font-size: clamp(42px, 4.5vw + 6px, 84px);
   margin: 25px 0 30px;
 }
 footer {
   border-top: 1px solid var(--line);
-  padding: 30px 5%;
+  padding: clamp(20px, 2vw, 36px) var(--edge);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -684,9 +704,11 @@ footer {
 }
 footer > span,
 footer > a:last-child {
-  font-size: 10px;
+  font-size: clamp(9px, 0.5vw + 4px, 11px);
   color: var(--muted);
 }
+
+/* ── TOAST / SKIP ── */
 .toast {
   position: fixed;
   left: 50%;
@@ -694,8 +716,8 @@ footer > a:last-child {
   transform: translateX(-50%);
   background: var(--ink);
   color: white;
-  padding: 12px 22px;
-  font-size: 12px;
+  padding: clamp(10px, 0.8vw + 4px, 16px) clamp(18px, 1.4vw + 6px, 28px);
+  font-size: clamp(11px, 0.6vw + 5px, 13px);
   z-index: 50;
   opacity: 0;
   pointer-events: none;
@@ -715,19 +737,55 @@ footer > a:last-child {
 .skip:focus {
   top: 0;
 }
-@media (min-width: 1500px) {
-  body {
-    border-inline: 1px solid var(--line);
-    max-width: 1440px;
-    margin: auto;
-  }
+
+/* ── SOURCE CHECKPOINTS ── */
+.source-checkpoints {
+  padding: clamp(24px, 2.5vw, 40px) var(--edge);
+  border-bottom: 1px solid var(--line);
 }
+.source-checkpoints h3 {
+  margin-top: 9px;
+}
+.checkpoint-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(10px, 1vw, 18px);
+  margin-top: 20px;
+}
+.checkpoint {
+  text-align: left;
+  border: 1px solid var(--line);
+  padding: clamp(12px, 1vw + 4px, 20px);
+  background: transparent;
+  display: grid;
+  gap: 7px;
+}
+.checkpoint:hover {
+  border-color: var(--red);
+  background: #eeece4;
+}
+.checkpoint > span {
+  font: clamp(10px, 0.55vw + 5px, 12px) monospace;
+  color: var(--red);
+}
+.checkpoint strong {
+  font-size: clamp(12px, 0.7vw + 4px, 15px);
+}
+.checkpoint small {
+  font-size: clamp(10px, 0.55vw + 4px, 12px);
+  color: var(--muted);
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ═══════════════════════════════════════════════ */
+
 @media (max-width: 1100px) {
   .hero-grid {
     gap: 25px;
   }
   .hero-art {
-    height: 410px;
+    height: clamp(320px, 40vw, 420px);
   }
   .actions {
     align-items: flex-start;
@@ -749,6 +807,7 @@ footer > a:last-child {
     display: none;
   }
 }
+
 @media (max-width: 760px) {
   html {
     scroll-padding-top: 75px;
@@ -768,7 +827,7 @@ footer > a:last-child {
     margin-top: 25px;
   }
   h1 {
-    font-size: clamp(56px, 12vw, 88px);
+    font-size: clamp(48px, 12vw, 88px);
   }
   .hero-art {
     height: 420px;
@@ -776,18 +835,11 @@ footer > a:last-child {
   .hero-meta {
     justify-content: space-between;
     gap: 8px;
-    font-size: 8px;
   }
   .actions {
     flex-direction: row;
     align-items: center;
     gap: 20px;
-  }
-  .text-link {
-    font-size: 11px;
-  }
-  .intro {
-    font-size: 21px;
   }
   .screening {
     grid-template-columns: 1fr;
@@ -796,9 +848,6 @@ footer > a:last-child {
   }
   .screening h2 br {
     display: none;
-  }
-  .screening h2 {
-    font-size: 35px;
   }
   .screening-copy > p {
     max-width: 500px;
@@ -812,8 +861,8 @@ footer > a:last-child {
     top: 0;
     background: var(--paper);
     z-index: 20;
-    margin-inline: -5.56%;
-    padding: 0 5.56%;
+    margin-inline: calc(-1 * var(--edge));
+    padding: 0 var(--edge);
     border-bottom: 1px solid var(--line);
   }
   .contents {
@@ -847,18 +896,9 @@ footer > a:last-child {
     padding-bottom: 42px;
     margin-bottom: 40px;
   }
-  .step h2 {
-    font-size: 36px;
-  }
   .reference-step {
     grid-template-columns: 140px 1fr;
     gap: 20px;
-  }
-  .reference-step h3 {
-    font-size: 18px;
-  }
-  .reference-step p {
-    font-size: 11px;
   }
   .downloads {
     gap: 12px;
@@ -866,27 +906,14 @@ footer > a:last-child {
   .downloads article > div {
     padding: 15px;
   }
-  .downloads h3 {
-    font-size: 20px;
-  }
   .downloads .button {
-    font-size: 11px;
     gap: 8px;
   }
   .upload-map {
     gap: 9px;
   }
-  .upload-map strong {
-    font-size: 10px;
-  }
-  .upload-map span {
-    font-size: 9px;
-  }
   .closing {
     padding-bottom: 50px;
-  }
-  .closing h2 {
-    font-size: 52px;
   }
   footer {
     flex-wrap: wrap;
@@ -899,7 +926,11 @@ footer > a:last-child {
     right: -10px;
     width: 230px;
   }
+  .checkpoint-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
+
 @media (max-width: 400px) {
   .actions {
     flex-direction: column;
@@ -929,19 +960,14 @@ footer > a:last-child {
     display: block;
   }
   .prompt-bar {
-    padding: 12px;
-    letter-spacing: 0.3px;
     flex-wrap: wrap;
     gap: 8px;
   }
-  .copy {
-    min-width: 110px;
-    padding: 7px;
-  }
-  .step h2 {
-    font-size: 32px;
+  .checkpoint-grid {
+    grid-template-columns: 1fr;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -951,51 +977,5 @@ footer > a:last-child {
   *::after {
     animation: none !important;
     transition: none !important;
-  }
-}
-.source-checkpoints {
-  padding: 30px 5%;
-  border-bottom: 1px solid var(--line);
-}
-.source-checkpoints h3 {
-  margin-top: 9px;
-}
-.checkpoint-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-top: 20px;
-}
-.checkpoint {
-  text-align: left;
-  border: 1px solid var(--line);
-  padding: 17px;
-  background: transparent;
-  display: grid;
-  gap: 7px;
-}
-.checkpoint:hover {
-  border-color: var(--red);
-  background: #eeece4;
-}
-.checkpoint > span {
-  font: 11px monospace;
-  color: var(--red);
-}
-.checkpoint strong {
-  font-size: 13px;
-}
-.checkpoint small {
-  font-size: 11px;
-  color: var(--muted);
-}
-@media (max-width: 760px) {
-  .checkpoint-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-@media (max-width: 400px) {
-  .checkpoint-grid {
-    grid-template-columns: 1fr;
   }
 }
