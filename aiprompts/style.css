@@ -414,6 +414,9 @@ nav a:hover {
   color: var(--ink);
   margin-bottom: 4px;
 }
+.step > .eyebrow {
+  margin-bottom: 18px;
+}
 .reference-step {
   display: grid;
   grid-template-columns: 210px 1fr;
@@ -529,6 +532,15 @@ nav a:hover {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
+}
+.prompt summary::-webkit-details-marker,
+.interface summary::-webkit-details-marker {
+  display: none;
+}
+.prompt details[open] > summary span,
+.interface details[open] > summary span {
+  display: inline-block;
+  transform: rotate(45deg);
 }
 .prompt pre {
   font:
@@ -910,6 +922,7 @@ footer > a:last-child {
     grid-template-columns: repeat(2, 1fr);
   }
   .rules {
+    flex-direction: column;
     gap: 10px;
   }
   .rules > div {
@@ -918,6 +931,8 @@ footer > a:last-child {
   .prompt-bar {
     padding: 12px;
     letter-spacing: 0.3px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .copy {
     min-width: 110px;
@@ -977,5 +992,10 @@ footer > a:last-child {
 @media (max-width: 760px) {
   .checkpoint-grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 400px) {
+  .checkpoint-grid {
+    grid-template-columns: 1fr;
   }
 }
