@@ -95,7 +95,8 @@ header {
   justify-content: space-between;
   border-bottom: 1px solid var(--line);
 }
-.brand {
+.brand,
+.wordmark {
   font-weight: 700;
   font-size: clamp(18px, 1.2vw + 6px, 22px);
   letter-spacing: -1px;
@@ -103,15 +104,18 @@ header {
   display: flex;
   align-items: center;
 }
-.brand span {
+.brand span,
+.wordmark span {
   font-weight: 400;
 }
-.brand i {
+.brand i,
+.wordmark i {
   width: 7px;
   height: 7px;
   background: var(--red);
   margin: 3px 0 0 5px;
 }
+.wordmark { color: var(--ink); }
 .header-note,
 .eyebrow,
 .hero-meta,
@@ -229,6 +233,18 @@ h1 {
   border-top: 1px solid var(--line);
   padding-top: clamp(14px, 1.5vw, 22px);
 }
+.free-generation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 540px;
+  margin-top: 18px;
+  padding: 13px 0 0;
+  border-top: 1px solid var(--line);
+}
+.free-generation .dot { margin-top: 8px; }
+.free-generation p { margin: 0; font-size: clamp(11px, 0.6vw + 5px, 13px); }
+.free-generation strong { color: var(--ink); }
 .hero-art {
   position: relative;
   isolation: isolate;
@@ -355,6 +371,14 @@ nav a:hover {
   font-weight: 500;
   color: var(--ink);
 }
+.help-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+}
+.help-trigger:hover { color: var(--red); }
 
 /* ── STEPS ── */
 .step {
@@ -431,6 +455,11 @@ nav a:hover {
   margin: 28px 0;
   align-items: center;
 }
+.character-prompts { margin-top: 28px; }
+.character-prompt { padding: clamp(20px, 2vw, 34px) 0; border-top: 1px solid var(--line); }
+.character-prompt:first-child { border-top: 0; padding-top: 0; }
+.character-prompt > h3 { margin: 0 0 8px; }
+.character-prompt .reference-step { margin-top: 16px; }
 .reference-step img {
   width: 100%;
   aspect-ratio: 4/5;
@@ -603,6 +632,21 @@ nav a:hover {
   font-size: clamp(9px, 0.5vw + 4px, 11px);
   color: var(--muted);
 }
+.ready-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 28px;
+  padding: clamp(18px, 1.7vw, 28px);
+  background: var(--ink);
+  color: #fff;
+}
+.ready-prompt h3 { margin-top: 9px; }
+.ready-prompt p { max-width: 560px; margin-bottom: 0; color: #d7d6cf; font-size: clamp(11px, 0.6vw + 5px, 13px); }
+.ready-prompt .copy { background: #f6f4ee; border-color: #f6f4ee; color: var(--ink); }
+.ready-prompt .copy:hover { background: var(--red); border-color: var(--red); color: #fff; }
+.free-note { margin: 20px 0; }
 
 /* ── UPLOAD MAP ── */
 .upload-map {
@@ -694,6 +738,25 @@ nav a:hover {
   font-size: clamp(42px, 4.5vw + 6px, 84px);
   margin: 25px 0 30px;
 }
+.consultation {
+  padding: clamp(44px, 5vw, 86px) var(--edge);
+  background: #22241f;
+  color: #f6f4ee;
+}
+.consultation-layout { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 7vw, 130px); align-items: start; margin-top: 18px; }
+.consultation h2 { font-size: clamp(40px, 4vw + 8px, 74px); }
+.consultation p { max-width: 590px; color: #c9cbc1; }
+.consultation .primary { background: #f6f4ee; border-color: #f6f4ee; color: var(--ink); }
+.consultation .primary:hover { background: var(--red); border-color: var(--red); color: #fff; }
+.consultation-form { display: grid; gap: 16px; margin-top: 18px; }
+.consultation-form label { display: grid; gap: 7px; color: #f6f4ee; font-size: 14px; font-weight: 600; }
+.consultation-form label span { color: #bfc1b7; font-weight: 400; }
+.consultation-form input, .consultation-form textarea { width: 100%; border: 1px solid #83857c; background: transparent; color: #fff; padding: 12px; border-radius: 0; }
+.consultation-form textarea { resize: vertical; }
+.consultation-form .button { justify-content: space-between; width: 100%; }
+.form-status { min-height: 1.7em; margin: 0; font-size: 13px; }
+.help-panel { margin-top: 28px; padding: 24px; background: #eeece4; }
+.help-panel h3 { margin: 8px 0 18px; }
 footer {
   border-top: 1px solid var(--line);
   padding: clamp(20px, 2vw, 36px) var(--edge);
@@ -803,6 +866,7 @@ footer > a:last-child {
   .screening {
     gap: 30px;
   }
+  .consultation-layout { grid-template-columns: 1fr; gap: 28px; }
   .header-note {
     display: none;
   }
@@ -903,6 +967,8 @@ footer > a:last-child {
   .downloads {
     gap: 12px;
   }
+  .ready-prompt { align-items: flex-start; flex-direction: column; }
+  .ready-prompt .copy { width: 100%; }
   .downloads article > div {
     padding: 15px;
   }

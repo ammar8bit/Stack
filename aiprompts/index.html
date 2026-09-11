@@ -50,9 +50,9 @@
     <a class="skip" href="#step-1">Skip to tutorial</a>
     <div class="progress" aria-hidden="true"></div>
     <header>
-      <a class="brand" href="/">STACK<span>TIME</span><i></i></a
+      <span class="wordmark">AMMAR<span> / AI WORKFLOW</span><i></i></span
       ><span class="header-note">THE CREATOR'S FIELD GUIDE</span
-      ><a href="#step-5" class="header-link">Get the assets ↗</a>
+      ><a href="#step-3" class="header-link">Get the assets ↗</a>
     </header>
     <main>
       <section class="hero">
@@ -68,9 +68,8 @@
               <strong>Starring you.</strong>
             </p>
             <p class="hero-desc">
-              Rebuild the reference scene with your own identity. Follow seven
-              clear steps, make three character views, then bring them together
-              in Genjutsu.
+              Rebuild the reference scene with your own identity. Make three
+              clear character views, then bring them together in Genjutsu.
             </p>
             <div class="actions">
               <a class="button primary" href="#step-1"
@@ -83,8 +82,12 @@
               >
             </div>
             <div class="hero-meta">
-              <span>07 STEPS</span><span>04 COPYABLE PROMPTS</span
+              <span>05 STEPS</span><span>04 COPYABLE PROMPTS</span
               ><span>02 SCENE ASSETS</span>
+            </div>
+            <div class="free-generation">
+              <span class="dot"></span>
+              <p><strong>Using the free Genjutsu generation?</strong> Treat it as your final attempt: review every file, image order and prompt before you press Generate.</p>
             </div>
           </div>
           <figure class="hero-art">
@@ -178,19 +181,17 @@
             <span class="eyebrow">YOUR WORKFLOW</span>
             <nav aria-label="Tutorial steps">
               <a href="#step-1"><span>01</span>Prepare your photos</a
-              ><a href="#step-2"><span>02</span>Create the front view</a
-              ><a href="#step-3"><span>03</span>Create the left profile</a
-              ><a href="#step-4"><span>04</span>Create the right profile</a
-              ><a href="#step-5"><span>05</span>Get the scene assets</a
-              ><a href="#step-6"><span>06</span>Set up Genjutsu</a
-              ><a href="#step-7"><span>07</span>Recast & review</a>
+              ><a href="#step-2"><span>02</span>Create your character</a
+              ><a href="#step-3"><span>03</span>Get the scene assets</a
+              ><a href="#step-4"><span>04</span>Set up Genjutsu</a
+              ><a href="#step-5"><span>05</span>Recast &amp; review</a>
             </nav>
             <div class="aside-note">
               One identity.<br />Three views.<br /><strong
                 >Endless possibilities.</strong
               >
             </div>
-            <a href="#troubleshooting" class="small">Something went wrong? ↗</a>
+            <button class="help-trigger small" type="button" data-help>Something went wrong? ↗</button>
           </div>
         </aside>
         <div class="steps">
@@ -251,14 +252,19 @@
             </div>
           </section>
           <section class="step" id="step-2" aria-labelledby="title-2">
-            <div class="step-label">
-              <span>02</span>CHARACTER REFERENCE / FRONT
-            </div>
-            <h2 id="title-2">Build your anchor image.</h2>
+            <div class="step-label"><span>02</span>YOUR CHARACTER REFERENCES</div>
+            <h2 id="title-2">Create your character image set.</h2>
             <p>
-              Upload your original identity photographs. Generate one
-              front-facing reference and approve the likeness before moving on.
+              This step creates the three clear, consistent views that tell AI
+              exactly who your character is. If you already have sharp,
+              full-body front, left and right images of your character, you can
+              skip this step and use those instead.
             </p>
+            <div class="note">
+              <strong>Make all three views before continuing.</strong> Use your original identity photos as references, keep one outfit and lighting setup, then copy the matching prompt for each angle below.
+            </div>
+            <div class="character-prompts">
+              <div class="character-prompt">
             <div class="reference-step">
               <figure>
                 <img
@@ -399,12 +405,9 @@ FINAL REQUIREMENT:
 This image will be used as an identity reference for AI video generation. Facial accuracy and identity consistency are more important than artistic interpretation.</pre>
               </details>
             </div>
-          </section>
-          <section class="step" id="step-3" aria-labelledby="title-3">
-            <div class="step-label">
-              <span>03</span>CHARACTER REFERENCE / LEFT
-            </div>
-            <h2 id="title-3">Turn left. Keep everything else.</h2>
+              </div>
+              <div class="character-prompt">
+            <h3>Left profile</h3>
             <p>
               Upload your original photographs and your approved front
               reference. The nose must point to the left edge of the final
@@ -523,12 +526,9 @@ FINAL REQUIREMENT:
 This must look like the same real person from the front reference photographed from a true left-side angle.</pre>
               </details>
             </div>
-          </section>
-          <section class="step" id="step-4" aria-labelledby="title-4">
-            <div class="step-label">
-              <span>04</span>CHARACTER REFERENCE / RIGHT
-            </div>
-            <h2 id="title-4">Now, the other side.</h2>
+              </div>
+              <div class="character-prompt">
+            <h3>Right profile</h3>
             <p>
               Use the original photographs and the same approved front reference
               again. The nose must point to the right edge of the final image.
@@ -646,10 +646,12 @@ FINAL REQUIREMENT:
 This must look like the same real person from the front reference photographed from a true right-side angle.</pre>
               </details>
             </div>
+              </div>
+            </div>
           </section>
-          <section class="step" id="step-5" aria-labelledby="title-5">
-            <div class="step-label"><span>05</span>THE DOWNLOADS</div>
-            <h2 id="title-5">Two files. Ready to go.</h2>
+          <section class="step" id="step-3" aria-labelledby="title-3">
+            <div class="step-label"><span>03</span>THE DOWNLOADS</div>
+            <h2 id="title-3">Two files. Ready to go.</h2>
             <p>
               Download both files. Ammar’s video is your motion source; the
               guards image keeps the surrounding cast’s style consistent. Add
@@ -711,10 +713,18 @@ This must look like the same real person from the front reference photographed f
                 </div>
               </article>
             </div>
+            <div class="ready-prompt">
+              <div>
+                <span class="eyebrow">NEXT: COPY THIS FIRST</span>
+                <h3>Your final Genjutsu prompt is ready.</h3>
+                <p>Copy it now, then open Genjutsu with your source video and scene files prepared.</p>
+              </div>
+              <button class="copy" data-copy="final" aria-label="Copy Genjutsu video prompt">Copy final prompt <span aria-hidden="true">⧉</span></button>
+            </div>
           </section>
-          <section class="step" id="step-6" aria-labelledby="title-6">
-            <div class="step-label"><span>06</span>BRING IT TOGETHER</div>
-            <h2 id="title-6">Give every reference a role.</h2>
+          <section class="step" id="step-4" aria-labelledby="title-4">
+            <div class="step-label"><span>04</span>BRING IT TOGETHER</div>
+            <h2 id="title-4">Give every reference a role.</h2>
             <p>
               Open Genjutsu, select <strong>Motion transfer</strong>, and add
               the downloaded video as the motion reference. This workflow
@@ -722,6 +732,9 @@ This must look like the same real person from the front reference photographed f
               your three generated images followed by the guard image, in this
               exact order.
             </p>
+            <div class="note free-note">
+              <strong>Make the free run count.</strong> Higgsfield gives one free Genjutsu generation. If you are using that free generation, check every upload and paste the final prompt before pressing Generate.
+            </div>
             <a
               class="button primary"
               href="https://higgsfield.ai/ai/video?model=genjutsu"
@@ -807,9 +820,9 @@ This must look like the same real person from the front reference photographed f
               </p>
             </details>
           </section>
-          <section class="step" id="step-7" aria-labelledby="title-7">
-            <div class="step-label"><span>07</span>THE FINAL PROMPT</div>
-            <h2 id="title-7">Keep the performance.<br />Change the cast.</h2>
+          <section class="step" id="step-5" aria-labelledby="title-5">
+            <div class="step-label"><span>05</span>THE FINAL PROMPT</div>
+            <h2 id="title-5">Keep the performance.<br />Change the cast.</h2>
             <p>
               Enable <strong>Prompt</strong>, paste the complete prompt below,
               and check your reference assignments. Match the source aspect
@@ -1262,6 +1275,11 @@ HARD CONSTRAINT: @image_1, @image_2 and @image_3 may map to SOURCE ACTOR A only.
               motion mistakes and tracking failures. They cannot guarantee a
               perfect take.
             </p>
+            <div class="help-panel" id="help-panel" hidden>
+              <span class="eyebrow">PERSONAL HELP</span>
+              <h3>Message Ammar and he’ll help you work through it.</h3>
+              <a class="button primary" href="https://www.instagram.com/ammar_doesphotography/" target="_blank" rel="noopener">Contact @ammar_doesphotography <span>↗</span></a>
+            </div>
           </section>
         </div>
       </div>
@@ -1270,11 +1288,30 @@ HARD CONSTRAINT: @image_1, @image_2 and @image_3 may map to SOURCE ACTOR A only.
         <h2>YOUR NEXT TAKE<br />STARTS WITH <em>YOU.</em></h2>
         <a class="button primary" href="#step-1">Back to the first step ↑</a>
       </section>
+      <section class="consultation" id="consultation" aria-labelledby="consultation-title">
+        <span class="eyebrow">WORK WITH AMMAR</span>
+        <div class="consultation-layout">
+          <div>
+            <h2 id="consultation-title">Want a sharper<br />AI workflow?</h2>
+            <p>Book a private consultation with Ammar to see his exact AI workflows, learn this process yourself, or discuss AI content and a custom website built around you or your brand.</p>
+          </div>
+          <div>
+            <button class="button primary consultation-trigger" type="button" aria-expanded="false" aria-controls="consultation-form">Request a private consultation <span>↓</span></button>
+            <form id="consultation-form" class="consultation-form" hidden>
+              <label>Full name<input name="name" autocomplete="name" required /></label>
+              <label>Email address<input name="email" type="email" autocomplete="email" required /></label>
+              <label>WhatsApp <span>(optional)</span><input name="whatsapp" type="tel" autocomplete="tel" /></label>
+              <label>How can Ammar help? <span>(optional)</span><textarea name="message" rows="4"></textarea></label>
+              <button class="button primary" type="submit">Send consultation request <span>↗</span></button>
+              <p class="form-status" aria-live="polite"></p>
+            </form>
+          </div>
+        </div>
+      </section>
     </main>
     <footer>
-      <a class="brand" href="/">STACK<span>TIME</span><i></i></a
-      ><span>A practical guide by Ammar · September 2026</span
-      ><a href="/">Back to StackTime ↗</a>
+      <span class="wordmark">AMMAR<span> / AI WORKFLOW</span><i></i></span
+      ><span>A practical guide by Ammar · September 2026</span>
     </footer>
     <div role="status" aria-live="polite" class="toast"></div>
   </body>

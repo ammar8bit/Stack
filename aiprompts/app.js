@@ -90,6 +90,54 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape")
     document.querySelectorAll(".tip[open]").forEach((el) => (el.open = false));
 });
+const helpTrigger = document.querySelector("[data-help]");
+const helpPanel = document.querySelector("#help-panel");
+helpTrigger?.addEventListener("click", () => {
+  helpPanel.hidden = !helpPanel.hidden;
+  helpTrigger.setAttribute("aria-expanded", String(!helpPanel.hidden));
+  if (!helpPanel.hidden) {
+    helpPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+});
+
+const consultationTrigger = document.querySelector(".consultation-trigger");
+const consultationForm = document.querySelector("#consultation-form");
+consultationTrigger?.addEventListener("click", () => {
+  consultationForm.hidden = !consultationForm.hidden;
+  consultationTrigger.setAttribute("aria-expanded", String(!consultationForm.hidden));
+  consultationTrigger.innerHTML = consultationForm.hidden
+    ? 'Request a private consultation <span>↓</span>'
+    : 'Close request form <span>↑</span>';
+  if (!consultationForm.hidden) consultationForm.querySelector("input")?.focus();
+});
+
+consultationForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formStatus = consultationForm.querySelector(".form-status");
+  const submitButton = consultationForm.querySelector('button[type="submit"]');
+  const endpoint = window.CONTACT_ENDPOINT || "";
+  if (!endpoint) {
+    formStatus.textContent = "The booking inbox is being connected. Please contact @ammar_doesphotography on Instagram for now.";
+    return;
+  }
+  submitButton.disabled = true;
+  formStatus.textContent = "Sending your request…";
+  try {
+    const payload = Object.fromEntries(new FormData(consultationForm).entries());
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error("Request failed");
+    consultationForm.reset();
+    formStatus.textContent = "Thank you — Ammar will be in touch soon.";
+  } catch {
+    formStatus.textContent = "Couldn’t send that just now. Please contact @ammar_doesphotography on Instagram.";
+  } finally {
+    submitButton.disabled = false;
+  }
+});
 if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
   import("https://cdn.jsdelivr.net/npm/motion@12.23.12/+esm")
     .then(({ animate, inView }) => {
