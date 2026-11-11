@@ -519,7 +519,7 @@
       <button class="btn-small" id="goalHoursEditBtn">Change</button>
     </div>
     <div class="setting-value-wrap hidden" id="goalHoursEditWrap">
-      <input type="number" id="settingsGoalHours" class="setting-input" value="100" min="1">
+      <input type="number" id="settingsGoalHours" class="setting-input" min="1">
       <button class="btn-small" id="goalHoursSaveBtn">Save</button>
     </div>
   </div>
@@ -683,8 +683,25 @@
     totalMs: 0, todayMs: 0, lastStudyDate: null,
     goalHours: 0, goalDeadline: '', hasGoal: false,
     goalHitAcked: false, deadlineHitAcked: false,
-    theme: 'dark', mode: 'session', firstTime: true
+    theme: 'dark', mode: 'session', firstTime: true,
+    lastActive: 0, savedAt: 0, writer: ''
   };
+
+  // Identifies this browser so cloud writes can tell "my change" from "another device's change"
+  let deviceId = '';
+  try {
+    deviceId = localStorage.getItem('stackDeviceId') || '';
+    if (!deviceId) {
+      deviceId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('stackDeviceId', deviceId);
+    }
+  } catch (e) { deviceId = 'device-' + Math.random().toString(36).slice(2); }
+
+  // A running timer whose page has not been heard from for this long is treated as abandoned:
+  // time is credited only up to the last heartbeat and the timer is paused (never runs for days).
+  const STALE_MS = 3 * 60 * 60 * 1000;
+  const CLOUD_POLL_MS = 10000;
+  const CLOUD_HEARTBEAT_MS = 30000;
 
   const timerDisplay = document.getElementById('timerDisplay');
   const timerSub = document.getElementById('timerSub');
@@ -841,16 +858,35 @@
     ambient.appendChild(b);
   }
 
-  function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+  function getTodayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parseLocalDate(str) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str || '');
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+  }
+  // Reference "now" for running timers: frozen at the pause moment while paused
+  function clockNow() { return state.paused && state.pauseStart ? state.pauseStart : Date.now(); }
+  function liveSessionMs() {
+    return state.sessionRunning ? state.sessionElapsed + (clockNow() - state.sessionStartTime) : state.sessionElapsed;
+  }
+  function liveTotalMs() { return state.totalMs + (state.sessionRunning ? liveSessionMs() : 0); }
+  function rolloverDay() {
+    const today = getTodayStr();
+    if (state.lastStudyDate && state.lastStudyDate !== today) {
+      state.todayMs = 0;
+      state.lastStudyDate = today;
+      projectedDailyGoalHours = null;
+    }
+  }
 
   function getDaysRemaining() {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const deadline = new Date(state.goalDeadline);
-    deadline.setHours(0,0,0,0);
-    const diff = deadline - today;
-    const oneDay = 24 * 60 * 60 * 1000;
-    return Math.ceil(diff / oneDay) + 1;
+    const deadline = parseLocalDate(state.goalDeadline);
+    if (!deadline) return 0;
+    return Math.round((deadline - today) / (24 * 60 * 60 * 1000)) + 1;
   }
 
   function getDailyGoalHours() {
@@ -863,11 +899,11 @@
   }
 
   function isGoalReached() {
-    return state.hasGoal && (state.totalMs / (1000 * 60 * 60)) >= state.goalHours;
+    return state.hasGoal && state.goalHours > 0 && (liveTotalMs() / (1000 * 60 * 60)) >= state.goalHours;
   }
 
   function isDeadlineReached() {
-    return state.hasGoal && getTodayStr() >= state.goalDeadline;
+    return state.hasGoal && Boolean(state.goalDeadline) && getTodayStr() > state.goalDeadline;
   }
 
   function checkGoalStatus() {
@@ -884,14 +920,29 @@
   }
 
   function openGoalHitModal() {
-    goalHitNewHours.value = state.goalHours;
-    goalHitNewDeadline.value = state.goalDeadline;
+    // Leave a field blank when it is the thing that was hit, so the user must choose a fresh value
+    goalHitNewHours.value = isGoalReached() ? '' : state.goalHours;
+    goalHitNewDeadline.value = isDeadlineReached() ? '' : state.goalDeadline;
+    goalHitNewDeadline.min = getTodayStr();
     goalHitOverlay.classList.add('open');
   }
 
+  function validateGoal(hours, deadline) {
+    if (!Number.isInteger(hours) || hours < 1) return 'Enter a goal of at least 1 hour.';
+    if (!deadline || !parseLocalDate(deadline)) return 'Choose a deadline.';
+    if (deadline < getTodayStr()) return 'The deadline cannot be in the past.';
+    const studied = liveTotalMs() / 3600000;
+    if (hours <= studied) return 'Your goal must be higher than the ' + studied.toFixed(1) + 'h you have already studied.';
+    return '';
+  }
+
   goalHitSaveBtn.addEventListener('click', () => {
-    state.goalHours = Math.max(1, parseInt(goalHitNewHours.value) || state.goalHours);
-    state.goalDeadline = goalHitNewDeadline.value || state.goalDeadline;
+    const newHours = parseInt(goalHitNewHours.value, 10);
+    const newDeadline = goalHitNewDeadline.value;
+    const err = validateGoal(newHours, newDeadline);
+    if (err) { alert(err); return; }
+    state.goalHours = newHours;
+    state.goalDeadline = newDeadline;
     state.goalHitAcked = false;
     state.deadlineHitAcked = false;
     syncGoalSettingsUI();
@@ -915,11 +966,7 @@
   const PROJECTION_REFRESH_MS = 20000;
 
   function computeProjectedDailyGoalHours() {
-    const now = Date.now();
-    const currentSessionMs = state.sessionRunning && !state.paused
-      ? state.sessionElapsed + (now - state.sessionStartTime)
-      : state.sessionElapsed;
-    const projectedTotalHours = (state.totalMs + currentSessionMs) / (1000 * 60 * 60);
+    const projectedTotalHours = liveTotalMs() / (1000 * 60 * 60);
     const remaining = Math.max(0, state.goalHours - projectedTotalHours);
     const days = getDaysRemaining();
     if (days <= 0) return 0;
@@ -927,9 +974,7 @@
   }
 
   function getTodayTotalMs() {
-    const now = Date.now();
-    const currentSession = state.sessionRunning && !state.paused ? state.sessionElapsed + (now - state.sessionStartTime) : state.sessionElapsed;
-    return state.todayMs + currentSession;
+    return state.todayMs + liveSessionMs();
   }
 
   function formatTime(ms) {
@@ -1002,15 +1047,14 @@
   }
 
   function updateDisplay() {
-    const now = Date.now();
-    const sessionMs = state.sessionRunning && !state.paused
-      ? state.sessionElapsed + (now - state.sessionStartTime)
-      : state.sessionElapsed;
-    const questionMs = state.questionRunning && !state.paused
+    rolloverDay();
+    const now = clockNow();
+    const sessionMs = liveSessionMs();
+    const questionMs = state.questionRunning
       ? state.questionElapsed + (now - state.questionStartTime)
       : state.questionElapsed;
     let countdownMs = 0;
-    if (state.countdownRunning && !state.paused) {
+    if (state.countdownRunning) {
       countdownMs = Math.max(0, state.countdownInitialMs - (now - state.countdownStartTime));
     } else if (state.mode === 'countdown') {
       countdownMs = state.countdownFinished ? 0 : state.countdownInitialMs;
@@ -1036,13 +1080,13 @@
       }
     }
 
-    const total = state.totalMs + (state.sessionRunning ? sessionMs : 0);
+    const total = liveTotalMs();
     totalTimeEl.textContent = formatCompact(total);
 
     if (state.hasGoal) {
       progressSection.classList.remove('no-goal');
       progressLabel.textContent = 'Goal: ' + state.goalHours + ' Hours';
-      const pct = Math.min((total / (state.goalHours * 60 * 60 * 1000)) * 100, 100);
+      const pct = state.goalHours > 0 ? Math.min((total / (state.goalHours * 60 * 60 * 1000)) * 100, 100) : 0;
       progressBar.style.width = pct + '%';
       progressPercent.textContent = pct.toFixed(1) + '%';
     } else {
@@ -1121,22 +1165,7 @@
     timerDisplay.classList.remove('warning', 'finished');
   }
 
-  function getCloudProgressData() {
-    return {
-      totalMs: state.totalMs,
-      todayMs: state.todayMs,
-      lastStudyDate: state.lastStudyDate,
-      theme: state.theme,
-      mode: state.mode,
-      countdownInitialMs: state.countdownInitialMs,
-      goalHours: state.goalHours,
-      goalDeadline: state.goalDeadline,
-      hasGoal: state.hasGoal,
-      goalHitAcked: state.goalHitAcked,
-      deadlineHitAcked: state.deadlineHitAcked,
-      firstTime: state.firstTime
-    };
-  }
+  function getCloudProgressData() { return buildPayload(); }
 
   function updateAccountUI(message) {
     if (!supabaseClient) {
@@ -1165,46 +1194,54 @@
     updateAccountUI();
   }
 
+  // Anything on this device that signing in must not silently throw away, including a timer
+  // that is running (or paused) right now.
   function hasLocalProgress() {
-    return state.totalMs > 0 || state.todayMs > 0;
+    return state.totalMs > 0 || state.todayMs > 0 || anyTimerRunning() || state.sessionElapsed > 0;
+  }
+
+  // Fold this device's progress into the account's cloud progress. Goal and settings come from the
+  // cloud; the timer running on this device is kept exactly as it is, so nothing resets mid-session.
+  function mergeLocalIntoCloud(cloudData) {
+    const today = getTodayStr();
+    const cloudToday = cloudData.lastStudyDate === today ? (Number(cloudData.todayMs) || 0) : 0;
+    const localToday = state.lastStudyDate === today ? state.todayMs : 0;
+    const merged = Object.assign({}, cloudData, {
+      totalMs: (Number(cloudData.totalMs) || 0) + state.totalMs,
+      todayMs: cloudToday + localToday,
+      lastStudyDate: today,
+      mode: state.mode,
+      countdownInitialMs: state.countdownRunning ? state.countdownInitialMs : (Number(cloudData.countdownInitialMs) || state.countdownInitialMs),
+      countdownFinished: state.countdownFinished,
+      sessionRunning: state.sessionRunning,
+      sessionStartTime: state.sessionStartTime,
+      sessionElapsed: state.sessionElapsed,
+      questionRunning: state.questionRunning,
+      questionStartTime: state.questionStartTime,
+      questionElapsed: state.questionElapsed,
+      countdownRunning: state.countdownRunning,
+      countdownStartTime: state.countdownStartTime,
+      paused: state.paused,
+      pauseStart: state.pauseStart,
+      lastActive: state.lastActive || Date.now()
+    });
+    applyStateData(merged, true);
+  }
+
+  function formatHoursMinutes(ms) {
+    const mins = Math.floor(ms / 60000);
+    return Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm';
   }
 
   function applyCloudProgress(data) {
     if (!data || typeof data !== 'object') return;
-    state.totalMs = Number(data.totalMs) || 0;
-    state.todayMs = Number(data.todayMs) || 0;
-    state.lastStudyDate = data.lastStudyDate || getTodayStr();
-    if (state.lastStudyDate !== getTodayStr()) {
-      state.todayMs = 0;
-      state.lastStudyDate = getTodayStr();
-    }
-    state.theme = data.theme === 'light' ? 'light' : 'dark';
-    state.mode = ['session', 'question', 'countdown'].includes(data.mode) ? data.mode : 'session';
-    state.countdownInitialMs = Number(data.countdownInitialMs) || 600000;
-    state.goalHours = Number(data.goalHours) || 100;
-    state.goalDeadline = data.goalDeadline || '2026-09-05';
-    state.hasGoal = data.hasGoal !== undefined ? Boolean(data.hasGoal) : true;
-    state.goalHitAcked = Boolean(data.goalHitAcked);
-    state.deadlineHitAcked = Boolean(data.deadlineHitAcked);
-    state.firstTime = data.firstTime !== undefined ? Boolean(data.firstTime) : false;
-    state.sessionRunning = false;
-    state.questionRunning = false;
-    state.countdownRunning = false;
-    state.countdownFinished = false;
-    state.paused = false;
-    document.body.setAttribute('data-theme', state.theme);
-    themeToggle.classList.toggle('active', state.theme === 'light');
-    goalToggle.classList.toggle('active', state.hasGoal);
-    modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
-    countdownSetup.classList.toggle('hidden', state.mode !== 'countdown');
-    syncGoalSettingsUI();
-    updateGoalRows();
-    updateDisplay();
+    applyStateData(data, true);
   }
 
-  async function saveCloudProgress() {
+  async function saveCloudProgress(quiet) {
     if (!supabaseClient || !cloudUser || !cloudSyncEnabled) return;
-    updateAccountUI('Saving to cloud…');
+    if (!state.savedAt) { state.savedAt = Date.now(); state.writer = deviceId; persistLocal(); }
+    if (!quiet) updateAccountUI('Saving to cloud…');
     const { error } = await supabaseClient.from('user_progress').upsert({
       user_id: cloudUser.id,
       data: getCloudProgressData(),
@@ -1215,13 +1252,38 @@
       updateAccountUI('Cloud save failed — your progress is still stored locally');
       return;
     }
-    updateAccountUI('Saved to cloud');
+    if (!quiet) updateAccountUI('Saved to cloud');
   }
 
   function queueCloudSave() {
     if (!cloudUser || !cloudSyncEnabled) return;
     clearTimeout(cloudSaveTimer);
     cloudSaveTimer = setTimeout(saveCloudProgress, 700);
+  }
+
+  let cloudBusy = false;
+  let lastCloudHeartbeat = 0;
+
+  // Pull the cloud copy; adopt it when another device saved something newer.
+  // With heartbeat=true and nothing newer in the cloud, also refresh our liveness marker there.
+  async function syncCloud(heartbeat) {
+    if (!supabaseClient || !cloudUser || !cloudSyncEnabled || cloudBusy) return;
+    cloudBusy = true;
+    try {
+      const rec = await getCloudProgress();
+      const remote = rec && rec.data;
+      if (remote && Number(remote.savedAt) > (state.savedAt || 0)) {
+        applyStateData(remote, true);
+        updateAccountUI('Synced from another device');
+      } else if (heartbeat) {
+        lastCloudHeartbeat = Date.now();
+        await saveCloudProgress(true);
+      }
+    } catch (e) {
+      console.warn('Cloud sync failed', e);
+    } finally {
+      cloudBusy = false;
+    }
   }
 
   async function getCloudProgress() {
@@ -1270,18 +1332,39 @@
       const sameAccountAsBefore = localStorage.getItem('stackCloudUserId') === cloudUser.id;
 
       if (sameAccountAsBefore && cloudSyncEnabled) {
-        if (hasCloudProgress) applyCloudProgress(cloudRecord.data);
+        if (hasCloudProgress && Number(cloudRecord.data.savedAt || 0) >= (state.savedAt || 0)) applyCloudProgress(cloudRecord.data);
         else await uploadLocalProgress();
         updateAccountUI('Cloud backup is on');
         return;
       }
 
       if (hasCloudProgress && hasLocalProgress()) {
+        const timerNote = anyTimerRunning()
+          ? ' Your timer is running (' + formatHoursMinutes(liveSessionMs()) + ' so far) and will keep going.'
+          : '';
         showCloudChoice({
-          title: 'Choose your progress',
-          message: 'This device and your account both have saved progress. Choose which version to use.',
-          primary: { label: 'Use cloud progress', action: async () => { applyCloudProgress(cloudRecord.data); setCloudSyncEnabled(true); saveState(); closeCloudChoice(); } },
-          secondary: { label: 'Upload this device’s progress', action: uploadLocalProgress },
+          title: 'Add your progress to your account?',
+          message: 'This device has ' + formatHoursMinutes(liveTotalMs()) + ' of progress and your account has '
+            + formatHoursMinutes(Number(cloudRecord.data.totalMs) || 0) + '.' + timerNote,
+          primary: {
+            label: 'Add my progress to my cloud hours',
+            action: async () => {
+              const snapshot = cloudRecord.data;
+              mergeLocalIntoCloud(snapshot);
+              setCloudSyncEnabled(true);
+              saveState();
+              closeCloudChoice();
+            }
+          },
+          secondary: {
+            label: 'Start from zero with my cloud hours',
+            action: async () => {
+              applyCloudProgress(cloudRecord.data);
+              setCloudSyncEnabled(true);
+              saveState();
+              closeCloudChoice();
+            }
+          },
           tertiary: { label: 'Keep local only', action: keepProgressLocal }
         });
       } else if (hasCloudProgress) {
@@ -1355,8 +1438,12 @@
     saveState();
   }
 
-  function saveState() {
-    const payload = {
+  function anyTimerRunning() {
+    return state.sessionRunning || state.questionRunning || state.countdownRunning;
+  }
+
+  function buildPayload() {
+    return {
       totalMs: state.totalMs,
       todayMs: state.todayMs,
       lastStudyDate: state.lastStudyDate || getTodayStr(),
@@ -1370,7 +1457,7 @@
       goalHitAcked: state.goalHitAcked,
       deadlineHitAcked: state.deadlineHitAcked,
       firstTime: false,
-      // In-progress timer state, persisted so a pause/minimize/app-kill doesn't lose the running session
+      // In-progress timer state, so a running timer follows you across reloads and devices
       sessionRunning: state.sessionRunning,
       sessionStartTime: state.sessionStartTime,
       sessionElapsed: state.sessionElapsed,
@@ -1380,10 +1467,105 @@
       countdownRunning: state.countdownRunning,
       countdownStartTime: state.countdownStartTime,
       paused: state.paused,
-      pauseStart: state.pauseStart
+      pauseStart: state.pauseStart,
+      lastActive: state.lastActive,
+      savedAt: state.savedAt,
+      writer: state.writer
     };
-    localStorage.setItem('stackTimerState', JSON.stringify(payload));
-    queueCloudSave();
+  }
+
+  function persistLocal() {
+    try { localStorage.setItem('stackTimerState', JSON.stringify(buildPayload())); } catch (e) {}
+  }
+
+  // heartbeat=true: only prove this page is alive (local, plus a throttled cloud ping if we own the
+  // running timer). Anything else is a real change and is pushed to the cloud.
+  function saveState(opts) {
+    const heartbeat = Boolean(opts && opts.heartbeat);
+    const now = Date.now();
+    state.lastActive = now;
+    if (!heartbeat) {
+      state.savedAt = now;
+      state.writer = deviceId;
+    }
+    persistLocal();
+    if (!heartbeat) {
+      queueCloudSave();
+    } else if (cloudUser && cloudSyncEnabled && anyTimerRunning() && state.writer === deviceId
+               && now - lastCloudHeartbeat > CLOUD_HEARTBEAT_MS) {
+      lastCloudHeartbeat = now;
+      syncCloud(true);
+    }
+  }
+
+  // If the page was gone / asleep for too long, stop crediting time past the last moment it was alive.
+  function reconcileStale() {
+    if (!anyTimerRunning() || state.paused || !state.lastActive) return false;
+    if (Date.now() - state.lastActive <= STALE_MS) return false;
+    state.paused = true;
+    state.pauseStart = state.lastActive;
+    saveState();
+    return true;
+  }
+
+  function refreshRunUI() {
+    cancelAnimationFrame(rafId);
+    const running = anyTimerRunning();
+    const modeRunning = (state.mode === 'session' && state.sessionRunning) ||
+                        (state.mode === 'question' && state.questionRunning) ||
+                        (state.mode === 'countdown' && state.countdownRunning);
+    timerDisplay.classList.toggle('running', state.sessionRunning || state.questionRunning || state.countdownRunning);
+    startBtn.textContent = state.paused && running ? 'Resume' : (modeRunning ? 'Stop' : 'Start');
+    pauseBtn.classList.toggle('hidden', !modeRunning || state.paused);
+    if (running && !state.paused) startLoop();
+  }
+
+  function applyStateData(data, fromCloud) {
+    state.totalMs = Number(data.totalMs) || 0;
+    state.theme = data.theme === 'light' ? 'light' : 'dark';
+    state.mode = ['session', 'question', 'countdown'].includes(data.mode) ? data.mode : 'session';
+    state.countdownInitialMs = Number(data.countdownInitialMs) || 600000;
+    state.goalHours = Number(data.goalHours) || 0;
+    state.goalDeadline = data.goalDeadline || '';
+    state.hasGoal = data.hasGoal !== undefined ? Boolean(data.hasGoal) : Boolean(state.goalHours && state.goalDeadline);
+    state.goalHitAcked = Boolean(data.goalHitAcked);
+    state.deadlineHitAcked = Boolean(data.deadlineHitAcked);
+    state.firstTime = data.firstTime !== undefined ? Boolean(data.firstTime) : !fromCloud;
+    const todayStr = getTodayStr();
+    state.todayMs = data.lastStudyDate === todayStr ? (Number(data.todayMs) || 0) : 0;
+    state.lastStudyDate = todayStr;
+    state.sessionRunning = Boolean(data.sessionRunning);
+    state.sessionStartTime = Number(data.sessionStartTime) || 0;
+    state.sessionElapsed = Number(data.sessionElapsed) || 0;
+    state.questionRunning = Boolean(data.questionRunning);
+    state.questionStartTime = Number(data.questionStartTime) || 0;
+    state.questionElapsed = Number(data.questionElapsed) || 0;
+    state.countdownRunning = Boolean(data.countdownRunning);
+    state.countdownStartTime = Number(data.countdownStartTime) || 0;
+    state.countdownFinished = Boolean(data.countdownFinished);
+    state.paused = Boolean(data.paused);
+    state.pauseStart = Number(data.pauseStart) || 0;
+    state.lastActive = Number(data.lastActive) || 0;
+    state.savedAt = Number(data.savedAt) || 0;
+    state.writer = data.writer || '';
+
+    document.body.setAttribute('data-theme', state.theme);
+    themeToggle.classList.toggle('active', state.theme === 'light');
+    goalToggle.classList.toggle('active', state.hasGoal);
+    syncGoalSettingsUI();
+    updateGoalRows();
+    modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
+    countdownSetup.classList.toggle('hidden', state.mode !== 'countdown');
+    const totalSec = Math.floor(state.countdownInitialMs / 1000);
+    cdH.value = Math.floor(totalSec / 3600);
+    cdM.value = Math.floor((totalSec % 3600) / 60);
+    cdS.value = totalSec % 60;
+    if (!state.countdownFinished) clearCountdownAlert();
+
+    reconcileStale();
+    persistLocal();
+    refreshRunUI();
+    updateDisplay();
   }
 
   function loadState() {
@@ -1395,73 +1577,8 @@
         if (raw) migrated = true;
       }
       if (!raw) return;
-      const data = JSON.parse(raw);
-      state.totalMs = data.totalMs || 0;
-      state.theme = data.theme || 'dark';
-      state.mode = data.mode || 'session';
-      state.countdownInitialMs = data.countdownInitialMs || 600000;
-      state.goalHours = Number(data.goalHours) || 0;
-      state.goalDeadline = data.goalDeadline || '';
-      state.hasGoal = data.hasGoal !== undefined ? data.hasGoal : Boolean(state.goalHours && state.goalDeadline);
-      state.goalHitAcked = data.goalHitAcked || false;
-      state.deadlineHitAcked = data.deadlineHitAcked || false;
-      state.firstTime = data.firstTime !== undefined ? data.firstTime : true;
+      applyStateData(JSON.parse(raw), false);
       if (migrated) state.firstTime = false;
-      if (data.todayMs !== undefined && data.lastStudyDate) {
-        const todayStr = getTodayStr();
-        if (data.lastStudyDate === todayStr) {
-          state.todayMs = data.todayMs || 0;
-          state.lastStudyDate = todayStr;
-        } else {
-          state.todayMs = 0;
-          state.lastStudyDate = todayStr;
-        }
-      } else {
-        state.todayMs = 0;
-        state.lastStudyDate = getTodayStr();
-      }
-      // Restore any in-progress session/question/countdown + pause state so backgrounding
-      // or the OS reloading the page never wipes a running or paused timer.
-      state.sessionRunning = data.sessionRunning || false;
-      state.sessionStartTime = data.sessionStartTime || 0;
-      state.sessionElapsed = data.sessionElapsed || 0;
-      state.questionRunning = data.questionRunning || false;
-      state.questionStartTime = data.questionStartTime || 0;
-      state.questionElapsed = data.questionElapsed || 0;
-      state.countdownRunning = data.countdownRunning || false;
-      state.countdownStartTime = data.countdownStartTime || 0;
-      state.countdownFinished = data.countdownFinished || false;
-      state.paused = data.paused || false;
-      state.pauseStart = data.pauseStart || 0;
-
-      document.body.setAttribute('data-theme', state.theme);
-      if (state.theme === 'light') themeToggle.classList.add('active');
-      goalToggle.classList.toggle('active', state.hasGoal);
-      syncGoalSettingsUI();
-      updateGoalRows();
-      modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
-      if (state.mode === 'countdown') {
-        countdownSetup.classList.remove('hidden');
-        const totalSec = Math.floor(state.countdownInitialMs / 1000);
-        cdH.value = Math.floor(totalSec / 3600);
-        cdM.value = Math.floor((totalSec % 3600) / 60);
-        cdS.value = totalSec % 60;
-      }
-
-      const isRunning = state.sessionRunning || state.questionRunning || state.countdownRunning;
-      if (isRunning) {
-        timerDisplay.classList.add('running');
-        if (state.paused) {
-          startBtn.textContent = 'Resume';
-          pauseBtn.classList.add('hidden');
-        } else {
-          startBtn.textContent = 'Stop';
-          pauseBtn.classList.remove('hidden');
-          startLoop();
-        }
-      }
-
-      updateDisplay();
     } catch (e) { console.error('Load failed', e); }
   }
 
@@ -1484,7 +1601,8 @@
 
   function openGoalSettingsModal() {
     goalSettingsHours.value = state.goalHours || '';
-    goalSettingsDeadline.value = state.goalDeadline || '';
+    goalSettingsDeadline.value = state.goalDeadline && state.goalDeadline >= getTodayStr() ? state.goalDeadline : '';
+    goalSettingsDeadline.min = getTodayStr();
     goalSettingsOverlay.classList.add('open');
     goalSettingsHours.focus();
   }
@@ -1492,10 +1610,8 @@
   function saveGoalFromModal() {
     const hours = parseInt(goalSettingsHours.value, 10);
     const deadline = goalSettingsDeadline.value;
-    if (!Number.isInteger(hours) || hours < 1 || !deadline) {
-      alert('Enter a goal of at least 1 hour and choose a deadline.');
-      return;
-    }
+    const err = validateGoal(hours, deadline);
+    if (err) { alert(err); return; }
     state.goalHours = hours;
     state.goalDeadline = deadline;
     state.hasGoal = true;
@@ -1832,7 +1948,10 @@
   goalSettingsSaveBtn.addEventListener('click', saveGoalFromModal);
 
   function commitGoalHours() {
-    state.goalHours = Math.max(1, parseInt(settingsGoalHours.value) || 100);
+    const hrs = parseInt(settingsGoalHours.value, 10);
+    const err = validateGoal(hrs, state.goalDeadline);
+    if (err) { alert(err); return; }
+    state.goalHours = hrs;
     state.goalHitAcked = false;
     syncGoalSettingsUI();
     updateDisplay();
@@ -1840,7 +1959,9 @@
   }
 
   function commitGoalDeadline() {
-    state.goalDeadline = settingsDeadline.value || state.goalDeadline;
+    const err = validateGoal(state.goalHours, settingsDeadline.value);
+    if (err) { alert(err); return; }
+    state.goalDeadline = settingsDeadline.value;
     state.deadlineHitAcked = false;
     syncGoalSettingsUI();
     updateDisplay();
@@ -1973,7 +2094,7 @@
     // Re-baseline any in-progress session so it doesn't get double-counted on top of the restored total
     state.sessionElapsed = 0;
     if (state.sessionRunning) {
-      state.sessionStartTime = Date.now();
+      state.sessionStartTime = clockNow();
     }
     state.goalHitAcked = false;
     state.deadlineHitAcked = false;
@@ -2004,10 +2125,14 @@
       timerDisplay.classList.remove('running', 'warning', 'finished');
       goalHitOverlay.classList.remove('open');
       clearCountdownAlert();
-      localStorage.removeItem('stackTimerState');
-      localStorage.removeItem('focusCafeState_v3');
-      localStorage.removeItem('focusCafeState_v2');
-      localStorage.removeItem('focusCafeState');
+      if (cloudUser && cloudSyncEnabled) {
+        saveState();
+      } else {
+        localStorage.removeItem('stackTimerState');
+        localStorage.removeItem('focusCafeState_v3');
+        localStorage.removeItem('focusCafeState_v2');
+        localStorage.removeItem('focusCafeState');
+      }
       updateDisplay();
     }
   });
@@ -2015,10 +2140,8 @@
   setupStartBtn.addEventListener('click', () => {
     const hours = parseInt(setupGoal.value, 10);
     const deadline = setupDeadline.value;
-    if (!Number.isInteger(hours) || hours < 1 || !deadline) {
-      alert('Enter a goal of at least 1 hour and choose a deadline, or select Start Without Goal.');
-      return;
-    }
+    const err = validateGoal(hours, deadline);
+    if (err) { alert(err); return; }
     state.goalHours = hours;
     state.goalDeadline = deadline;
     state.hasGoal = true;
@@ -2044,22 +2167,25 @@
   });
 
   setInterval(() => {
-    if (state.sessionRunning || state.questionRunning || state.countdownRunning) saveState();
+    if (!anyTimerRunning()) return;
+    if (reconcileStale()) { refreshRunUI(); updateDisplay(); return; }
+    saveState({ heartbeat: true });
   }, 5000);
 
+  setInterval(() => { rolloverDay(); syncCloud(false); }, CLOUD_POLL_MS);
+
   document.addEventListener('visibilitychange', () => {
-    if (state.sessionRunning || state.questionRunning || state.countdownRunning) {
-      if (document.visibilityState === 'hidden') {
-        // Save immediately on backgrounding so a suspended/reloaded tab never loses a paused or running timer
-        saveState();
-      } else {
-        updateDisplay();
-      }
+    if (document.visibilityState === 'hidden') {
+      if (anyTimerRunning()) saveState({ heartbeat: true });
+      return;
     }
+    if (reconcileStale()) refreshRunUI();
+    updateDisplay();
+    syncCloud(false);
   });
 
   window.addEventListener('pagehide', () => {
-    if (state.sessionRunning || state.questionRunning || state.countdownRunning) saveState();
+    if (anyTimerRunning()) saveState({ heartbeat: true });
   });
 
   function setupPointerInteractions() {
@@ -2204,6 +2330,7 @@
     }
   }
 
+  [setupDeadline, goalSettingsDeadline, settingsDeadline].forEach(input => { input.min = getTodayStr(); });
   loadState();
   setupPointerInteractions();
   if (state.firstTime) {
@@ -2224,8 +2351,8 @@
       if (session && session.user) {
         const userChanged = !cloudUser || cloudUser.id !== session.user.id;
         cloudUser = session.user;
-        updateAccountUI('Signed in — choosing progress…');
         if (userChanged || event === 'INITIAL_SESSION') {
+          updateAccountUI('Signed in — choosing progress…');
           setTimeout(() => prepareCloudProgress(), 0);
         }
       }
