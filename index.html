@@ -1373,9 +1373,12 @@
         saveState();
       } else if (hasLocalProgress()) {
         showCloudChoice({
-          title: 'Save your local progress?',
-          message: 'You have progress saved on this device. Upload it to your new account or continue using StackTime locally.',
-          primary: { label: 'Upload to cloud', action: uploadLocalProgress },
+          title: anyTimerRunning() ? 'Add your current timer to your account?' : 'Save your local progress?',
+          message: anyTimerRunning()
+            ? 'Your timer is running (' + formatHoursMinutes(liveSessionMs()) + ' so far) and this device has ' + formatHoursMinutes(liveTotalMs())
+              + ' of progress. Add it to your cloud progress? Your timer will keep going.'
+            : 'You have progress saved on this device. Upload it to your new account or continue using StackTime locally.',
+          primary: { label: anyTimerRunning() ? 'Add to my cloud progress' : 'Upload to cloud', action: uploadLocalProgress },
           secondary: { label: 'Keep local only', action: keepProgressLocal }
         });
       } else {
