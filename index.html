@@ -1331,7 +1331,10 @@
       const hasCloudProgress = Boolean(cloudRecord && cloudRecord.data);
       const sameAccountAsBefore = localStorage.getItem('stackCloudUserId') === cloudUser.id;
 
-      if (sameAccountAsBefore && cloudSyncEnabled) {
+      // Reloading while signed in is safe to auto-load. But never silently overwrite a timer that is
+      // running here unless this same device wrote the cloud copy; otherwise ask via the popup below.
+      const cloudIsOurs = hasCloudProgress && cloudRecord.data.writer === deviceId;
+      if (sameAccountAsBefore && cloudSyncEnabled && (!anyTimerRunning() || cloudIsOurs || !hasCloudProgress)) {
         if (hasCloudProgress && Number(cloudRecord.data.savedAt || 0) >= (state.savedAt || 0)) applyCloudProgress(cloudRecord.data);
         else await uploadLocalProgress();
         updateAccountUI('Cloud backup is on');
