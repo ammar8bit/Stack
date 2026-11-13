@@ -4,10 +4,19 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { session, powerMonitor, globalShortcut, app } = require('electron');
+const { session, powerMonitor, globalShortcut, app, shell } = require('electron');
 
 module.exports = function startHarness(ctx, extra) {
   const win = name => ctx.windows[name];
+  const mock = process.env.STACKTIME_TEST_MOCK ? require('./mock-cloud')(ctx.log) : null;
+  const opened = [];
+  const external = []; // every request that is not served from the app bundle
+  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+    if (!details.url.startsWith('app://') && !details.url.startsWith('devtools://')) external.push(details.method + ' ' + details.url.split('?')[0]);
+    callback({});
+  });
+  if (mock && process.env.STACKTIME_TEST_OFFLINE) mock.setOffline(true);
+  if (mock) shell.openExternal = async (url) => { opened.push(url); }; // do not pop real browser tabs during tests
   const commands = {
     status() {
       const main = win('main');
@@ -38,7 +47,13 @@ module.exports = function startHarness(ctx, extra) {
       fs.writeFileSync(file, image.toPNG());
       return image.getSize();
     },
-    offline({ on }) { session.defaultSession.enableNetworkEmulation({ offline: Boolean(on) }); return Boolean(on); },
+    offline({ on }) {
+      if (mock) mock.setOffline(on); else session.defaultSession.enableNetworkEmulation({ offline: Boolean(on) });
+      return Boolean(on);
+    },
+    cloud() { return Object.assign({ opened }, mock.get()); },
+    external() { return external.slice(-40); },
+    cloudSet({ data }) { return mock.setRow(data); },
     window({ target, op }) { win(target || 'main')[op](); return true; },
     resume() { powerMonitor.emit('resume'); return true; },
     protocol({ url }) { extra.handleProtocolUrl(url); return true; },

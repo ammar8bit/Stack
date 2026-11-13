@@ -16,6 +16,29 @@
     set(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
   };
 
+  // "Online" needs more than navigator.onLine, which stays true on Wi-Fi with no internet. Every
+  // request the page makes goes through here: a network-level failure marks the cloud unreachable,
+  // any HTTP response (even an error status) marks it reachable again.
+  let reachable = true;
+  let onConnectivity = () => {};
+  const online = () => navigator.onLine && reachable;
+  function setReachable(value) {
+    if (reachable === value) return;
+    reachable = value;
+    onConnectivity();
+  }
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async function (...args) {
+    try {
+      const response = await nativeFetch(...args);
+      setReachable(true);
+      return response;
+    } catch (error) {
+      if (error instanceof TypeError) setReachable(false);
+      throw error;
+    }
+  };
+
   window.stacktimeDesktopAttach = function (app) {
     const today = () => app.getTodayStr();
     const state = () => app.getState();
@@ -77,7 +100,8 @@
       const s = state();
       const delta = offlineDelta();
       const running = app.anyTimerRunning();
-      const studied = delta.total > 0 ? app.formatHoursMinutes(delta.total) + ' of study time' : '';
+      const studied = delta.total >= 60000 ? app.formatHoursMinutes(delta.total) + ' of study time'
+        : delta.total > 0 ? 'under a minute of study time' : '';
       const timer = running ? 'a timer that is still running' : '';
       app.showCloudChoice({
         title: 'Keep what you did offline?',
@@ -137,13 +161,19 @@
 
     // With unsynced changes, a save must first compare against the cloud copy instead of blindly
     // replacing it. syncCloud(true) does exactly that: fetch, compare (holdRemote above), then save.
-    function flushSoon() {
+    // syncCloud skips its turn while another sync is in flight, so try again until the changes are out.
+    let flushTries = 0;
+    function flushSoon(delay) {
       clearTimeout(flushTimer);
-      flushTimer = setTimeout(() => { if (navigator.onLine) app.syncCloud(true); }, 400);
+      flushTimer = setTimeout(async () => {
+        if (!online() || !syncOn()) { flushTries = 0; return; }
+        await app.syncCloud(meta.dirty);
+        if (meta.dirty && !conflict && ++flushTries < 6) flushSoon(1500); else flushTries = 0;
+      }, delay || 400);
     }
     function interceptSave() {
       if (conflict) return true;
-      if (!navigator.onLine) {
+      if (!online()) {
         if (!meta.dirty) { meta.dirty = true; saveMeta(); }
         return true;
       }
@@ -154,25 +184,33 @@
 
     // ---- 3. offline indicator ----
     const pill = document.createElement('div');
-    pill.textContent = 'Offline — your timer still works. Changes sync when you reconnect.';
-    pill.style.cssText = 'position:fixed;left:50%;bottom:1rem;transform:translateX(-50%);z-index:2000;display:none;'
+    pill.textContent = 'Offline — timer still works, changes sync when you reconnect';
+    pill.style.cssText = 'position:fixed;left:1rem;bottom:1rem;z-index:2000;display:none;'
       + 'pointer-events:none;padding:0.45rem 0.95rem;border-radius:50px;font-size:0.72rem;font-weight:500;'
       + 'background:var(--bg-card);color:var(--text);border:1px solid var(--orange);box-shadow:var(--shadow);'
       + 'backdrop-filter:blur(12px);white-space:nowrap;';
     pill.setAttribute('role', 'status');
     document.body.appendChild(pill);
 
+    // The site only styles .btn-ghost inside the welcome card, so the extra choices in the cloud
+    // popup render as bare system buttons. Give them the same ghost style here.
+    const style = document.createElement('style');
+    style.textContent = '#cloudChoiceOverlay .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-dim);'
+      + 'padding:0.7rem;border-radius:50px;font-family:var(--font-body);font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s}'
+      + '#cloudChoiceOverlay .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}';
+    document.head.appendChild(style);
+
     const cloudStatus = byId('cloudStatus');
     let lastOverride = null;
     function statusOverride() {
       if (!syncOn()) return null;
       if (conflict) return 'Sync paused — choose which progress to keep';
-      if (!navigator.onLine) return 'Offline — saved on this device, will sync when you reconnect';
+      if (!online()) return 'Offline — saved on this device, will sync when you reconnect';
       if (meta.dirty) return 'Back online — syncing your changes…';
       return null;
     }
     function renderStatus() {
-      pill.style.display = navigator.onLine ? 'none' : 'block';
+      pill.style.display = online() ? 'none' : 'block';
       const override = statusOverride();
       if (override) {
         if (cloudStatus.textContent !== override) cloudStatus.textContent = override;
@@ -195,7 +233,7 @@
       app.roomSys(text);
     }
     document.addEventListener('submit', (event) => {
-      if (navigator.onLine || event.target.id !== 'rvChatForm') return;
+      if (online() || event.target.id !== 'rvChatForm') return;
       event.preventDefault();
       event.stopImmediatePropagation();
       const input = byId('rvChatInput');
@@ -206,7 +244,7 @@
       app.roomSys('Offline — "' + text + '" will be sent when you reconnect');
     }, true);
     document.addEventListener('click', (event) => {
-      if (navigator.onLine || !event.target.closest) return;
+      if (online() || !event.target.closest) return;
       if (!event.target.closest('.rv-cheer, .rv-nudge')) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -218,24 +256,36 @@
       // An expired session could not refresh while offline; this renews it straight away
       if (app.supabase) { try { await app.supabase.auth.getSession(); } catch (e) {} }
       conflictDismissed = false;
-      if (meta.dirty || conflict) app.syncCloud(true); else app.syncCloud(false);
+      flushSoon();
       if (app.getRoomCode()) {
         app.roomResync();
         while (chatQueue.length) await app.roomSend('text', chatQueue.shift());
       }
     }
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', () => {
+    let wasOnline = online();
+    onConnectivity = () => {
+      const now = online();
+      if (now === wasOnline) return;
+      wasOnline = now;
+      if (now) { onOnline(); return; }
       renderStatus();
       if (app.getRoomCode()) app.roomSys('You are offline. Your time keeps counting and updates when you reconnect.', true);
-    });
+    };
+    // Any HTTP answer from the project proves the connection is back
+    function probe() {
+      if (!app.supabase || !navigator.onLine || reachable) return;
+      window.fetch(app.supabase.supabaseUrl + '/auth/v1/health', { cache: 'no-store' }).catch(() => {});
+    }
+    window.addEventListener('online', () => { onConnectivity(); probe(); });
+    window.addEventListener('offline', onConnectivity);
+    setInterval(probe, 10000);
     // Retry quietly while changes are waiting (covers a connection that is "up" but not reachable yet)
-    setInterval(() => { if (meta.dirty && navigator.onLine && syncOn()) app.syncCloud(true); }, 15000);
+    setInterval(() => { if (meta.dirty && online() && syncOn() && app.supabase) app.syncCloud(true); }, 15000);
     byId('cloudChoiceCloseBtn').addEventListener('click', () => { if (conflict) conflictDismissed = true; });
 
     // ---- 5. sign-in through the system browser ----
     async function oauth(provider) {
-      if (!navigator.onLine) return 'You are offline. Connect to the internet to sign in.';
+      if (!online()) return 'You are offline. Connect to the internet to sign in.';
       const { data, error } = await app.supabase.auth.signInWithOAuth({
         provider, options: { redirectTo: CALLBACK_URL, skipBrowserRedirect: true }
       });
