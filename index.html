@@ -228,36 +228,112 @@
   .donate-row { margin-top:0.5rem; display:flex; flex-direction:column; gap:0.4rem; }
   .donate-row span { font-size:0.72rem; color:var(--text-dim); text-decoration:none; padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:6px; text-align:center; opacity:0.7; transition:all 0.2s; cursor:default; }
   .donate-row span:hover { opacity:1; border-color:var(--accent); color:var(--accent); }
-  .room-widget { position:fixed; top:4.2rem; right:1.5rem; z-index:10; width:260px; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:0.9rem 1rem; backdrop-filter:blur(14px); box-shadow:var(--shadow); }
-  .room-head { display:flex; justify-content:space-between; align-items:center; gap:0.5rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:0.6rem; }
-  .room-head button { font-size:0.68rem; padding:0.2rem 0.5rem; }
-  .room-code-chip { color:var(--text); font-family:monospace; font-weight:700; letter-spacing:0.18em; }
-  .room-members { display:flex; flex-direction:column; gap:0.65rem; }
-  .room-member-top { display:flex; justify-content:space-between; align-items:baseline; gap:0.5rem; }
-  .room-name { font-size:0.82rem; color:var(--text); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-  .room-time { font-family:var(--font-timer); font-size:1.25rem; letter-spacing:0.05em; color:var(--text); font-variant-numeric:tabular-nums; }
-  .room-status { display:flex; align-items:center; gap:0.35rem; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-top:0.1rem; }
-  .room-dot { width:7px; height:7px; border-radius:50%; background:var(--text-dim); opacity:0.6; flex:none; }
-  .room-member.studying .room-dot { background:var(--green); opacity:1; box-shadow:0 0 8px var(--green-glow); animation:roomPulse 1.6s ease-in-out infinite; }
-  .room-member.studying .room-time { text-shadow:0 0 18px var(--green-glow); }
-  .room-member.paused .room-dot { background:var(--orange); opacity:1; }
-  .room-member.paused .room-status { color:var(--orange); }
-  .room-member.offline { opacity:0.55; }
-  .room-bar { height:4px; background:var(--progress-track); border-radius:2px; overflow:hidden; margin-top:0.35rem; }
-  .room-bar > div { height:100%; width:0; background:var(--accent); border-radius:2px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); }
-  .room-member.done .room-bar > div { background:var(--green); }
-  .room-note { font-size:0.68rem; color:var(--text-dim); margin-top:0.6rem; text-align:center; line-height:1.4; }
+  /* ---- Study Together: entry button, lobby, full-screen room ---- */
+  .together-btn { display:inline-flex; align-items:center; gap:0.65rem; background:var(--bg-card); border:1px solid var(--border); color:var(--text); padding:0.75rem 1.5rem; border-radius:50px; font-family:var(--font-body); font-size:0.9rem; font-weight:600; cursor:pointer; backdrop-filter:blur(8px); transition:all 0.25s; }
+  .together-btn:hover { border-color:var(--accent); box-shadow:0 4px 24px var(--accent-glow); transform:translateY(-2px); }
+  .together-btn small { color:var(--text-dim); font-weight:400; font-size:0.78rem; }
+  .together-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green-glow); animation:roomPulse 1.6s ease-in-out infinite; flex:none; }
   @keyframes roomPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.35); } }
-  .room-field { display:flex; flex-direction:column; gap:0.35rem; text-align:left; margin-bottom:0.85rem; }
-  .room-field label { font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; }
-  .room-field input { width:100%; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--text); padding:0.65rem 0.8rem; font-family:var(--font-body); font-size:0.9rem; outline:none; }
+
+  .room-field { display:flex; flex-direction:column; gap:0.4rem; text-align:left; margin-bottom:1rem; }
+  .room-field label { font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.12em; }
+  .room-field input { width:100%; background:transparent; border:1px solid var(--border); border-radius:10px; color:var(--text); padding:0.75rem 0.9rem; font-family:var(--font-body); font-size:0.95rem; outline:none; transition:border-color 0.2s; }
   .room-field input:focus { border-color:var(--accent); }
-  .room-big-code { font-family:monospace; font-size:2.1rem; font-weight:700; letter-spacing:0.3em; color:var(--text); text-align:center; margin:0.4rem 0 0.2rem; padding-left:0.3em; user-select:all; }
-  .room-row { display:flex; gap:0.5rem; align-items:center; }
+  .room-field input.invalid { border-color:var(--orange); }
+  .room-tabs { display:flex; gap:0.3rem; background:var(--bg-glass); border:1px solid var(--border); border-radius:50px; padding:0.3rem; margin-bottom:1.1rem; }
+  .room-tab { flex:1; border:none; background:transparent; color:var(--text-dim); padding:0.6rem 0.5rem; border-radius:50px; font-family:var(--font-body); font-weight:600; font-size:0.82rem; cursor:pointer; transition:all 0.2s; }
+  .room-tab.active { background:var(--accent); color:#fff; box-shadow:0 2px 14px var(--accent-glow); }
+  .goal-chips { display:flex; gap:0.4rem; flex-wrap:wrap; }
+  .goal-chip { flex:1 0 auto; background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:0.45rem 0.7rem; border-radius:50px; font-family:var(--font-body); font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .goal-chip:hover { border-color:var(--accent); color:var(--text); }
+  .goal-chip.active { border-color:var(--accent); background:var(--accent); color:#fff; }
+  .goal-stepper { display:flex; align-items:center; justify-content:space-between; gap:0.8rem; margin-top:0.7rem; background:var(--bg-glass); border:1px solid var(--border); border-radius:14px; padding:0.6rem 0.8rem; }
+  .goal-stepper button { width:42px; height:42px; flex:none; border-radius:50%; background:var(--bg-card); border:1px solid var(--border); color:var(--text); font-size:1.3rem; line-height:1; cursor:pointer; transition:all 0.2s; }
+  .goal-stepper button:hover { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .goal-value { font-family:var(--font-timer); font-size:2.2rem; letter-spacing:0.06em; color:var(--text); font-variant-numeric:tabular-nums; }
+  .goal-hint { font-size:0.76rem; color:var(--text-dim); margin-top:0.6rem; text-align:center; line-height:1.45; }
+  .room-code-input { text-transform:uppercase; letter-spacing:0.4em; font-family:monospace !important; font-size:1.4rem !important; text-align:center; padding-left:1.2rem !important; }
+
+  .room-view { position:fixed; inset:0; z-index:50; background:var(--bg); display:flex; flex-direction:column; overflow:hidden; }
+  .room-view::before { content:''; position:absolute; inset:0; background:radial-gradient(55% 45% at 32% 28%, var(--accent-glow), transparent 70%); opacity:0.3; pointer-events:none; }
+  .rv-top { position:relative; display:flex; align-items:center; gap:0.6rem; padding:0.9rem 1.5rem; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .rv-title { font-family:var(--font-timer); font-size:1.5rem; letter-spacing:0.14em; color:var(--text); margin-right:auto; }
+  .rv-chip { display:inline-flex; align-items:center; gap:0.45rem; background:var(--bg-card); border:1px solid var(--border); color:var(--text-dim); padding:0.45rem 0.9rem; border-radius:50px; font-family:var(--font-body); font-size:0.78rem; font-weight:500; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .rv-chip:hover { border-color:var(--accent); color:var(--text); }
+  .rv-chip b { color:var(--text); font-weight:700; }
+  .rv-chip .rv-code { font-family:monospace; letter-spacing:0.2em; font-size:0.92rem; }
+  .rv-chip.on { color:var(--green); border-color:var(--green); cursor:default; }
+  .rv-chip.danger:hover { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .rv-body { position:relative; flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 360px; }
+  .rv-main { min-width:0; overflow-y:auto; padding:1.6rem clamp(1rem,4vw,3rem) 2rem; display:flex; flex-direction:column; align-items:center; gap:1.3rem; }
+  .rv-banner { font-size:0.9rem; color:var(--text-dim); text-align:center; min-height:1.4rem; line-height:1.45; }
+  .rv-banner.lead { color:var(--text); }
+  .rv-banner.win { color:var(--green); font-weight:600; }
+  .rv-my-time { font-family:var(--font-timer); font-size:clamp(4rem,11vw,8.5rem); line-height:0.95; letter-spacing:0.05em; color:var(--text); text-shadow:0 0 50px var(--accent-glow); text-align:center; font-variant-numeric:tabular-nums; user-select:none; }
+  .rv-my-time.running { text-shadow:0 0 70px var(--accent-glow), 0 0 140px var(--accent-glow); }
+  .rv-my-sub { font-size:0.8rem; color:var(--text-dim); letter-spacing:0.12em; text-transform:uppercase; text-align:center; margin-top:-0.5rem; }
+  .rv-controls { display:flex; gap:1rem; align-items:center; justify-content:center; }
+  .rv-board { width:100%; max-width:720px; display:flex; flex-direction:column; gap:0.65rem; margin-top:0.4rem; }
+  .rv-board-head { display:flex; justify-content:space-between; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.14em; color:var(--text-dim); padding:0 0.2rem; }
+  .rv-lanes { display:flex; flex-direction:column; gap:0.65rem; }
+  .rv-lane { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:0.45rem 0.9rem; align-items:center; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:0.85rem 1rem; backdrop-filter:blur(10px); transition:border-color 0.3s, box-shadow 0.3s, opacity 0.3s; }
+  .rv-lane.me { border-color:var(--accent); }
+  .rv-lane.leader { box-shadow:0 0 26px var(--accent-glow); }
+  .rv-lane.offline { opacity:0.55; }
+  .rv-rank { grid-row:span 2; width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-family:var(--font-timer); font-size:1.15rem; background:var(--bg-glass); border:1px solid var(--border); color:var(--text-dim); }
+  .rv-lane.leader .rv-rank { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .rv-lane.done .rv-rank { background:var(--green); border-color:var(--green); color:#fff; }
+  .rv-who { min-width:0; }
+  .rv-name { font-size:0.95rem; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rv-status { display:flex; align-items:center; gap:0.4rem; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-top:0.15rem; }
+  .rv-dot { width:7px; height:7px; border-radius:50%; background:var(--text-dim); opacity:0.6; flex:none; }
+  .rv-lane.studying .rv-dot { background:var(--green); opacity:1; box-shadow:0 0 8px var(--green-glow); animation:roomPulse 1.6s ease-in-out infinite; }
+  .rv-lane.paused .rv-dot { background:var(--orange); opacity:1; }
+  .rv-lane.paused .rv-status { color:var(--orange); }
+  .rv-nudge { margin-left:0.3rem; background:transparent; border:1px solid var(--border); color:var(--text-dim); border-radius:50px; padding:0.12rem 0.55rem; font-family:var(--font-body); font-size:0.66rem; letter-spacing:0.04em; text-transform:none; cursor:pointer; transition:all 0.2s; }
+  .rv-nudge:hover { border-color:var(--accent); color:var(--accent); }
+  .rv-nudge:disabled { opacity:0.5; cursor:default; }
+  .rv-time { font-family:var(--font-timer); font-size:1.75rem; letter-spacing:0.05em; color:var(--text); font-variant-numeric:tabular-nums; text-align:right; }
+  .rv-lane.studying .rv-time { text-shadow:0 0 18px var(--green-glow); }
+  .rv-track { grid-column:2 / -1; height:6px; background:var(--progress-track); border-radius:3px; overflow:hidden; }
+  .rv-track > div { height:100%; width:0; background:var(--accent); border-radius:3px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); }
+  .rv-lane.done .rv-track > div { background:var(--green); }
+  .rv-chat { position:relative; display:flex; flex-direction:column; min-height:0; border-left:1px solid var(--border); background:var(--bg-glass); }
+  .rv-chat-head { padding:0.9rem 1rem; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.14em; color:var(--text-dim); border-bottom:1px solid var(--border); }
+  .rv-feed { flex:1; min-height:0; overflow-y:auto; padding:0.9rem 1rem; display:flex; flex-direction:column; gap:0.55rem; }
+  .rv-msg { max-width:88%; align-self:flex-start; }
+  .rv-msg.mine { align-self:flex-end; text-align:right; }
+  .rv-msg-name { font-size:0.66rem; color:var(--text-dim); margin-bottom:0.15rem; }
+  .rv-msg-body { display:inline-block; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:0.45rem 0.7rem; font-size:0.86rem; color:var(--text); line-height:1.4; word-break:break-word; text-align:left; }
+  .rv-msg.mine .rv-msg-body { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .rv-msg.cheer .rv-msg-body { font-size:1rem; font-weight:600; }
+  .rv-sys { align-self:center; font-size:0.7rem; color:var(--text-dim); text-align:center; line-height:1.4; padding:0.1rem 0.5rem; }
+  .rv-sys.hot { color:var(--accent); font-weight:600; }
+  .rv-cheers { display:flex; gap:0.4rem; padding:0.6rem 1rem 0; flex-wrap:wrap; }
+  .rv-cheer { background:var(--bg-card); border:1px solid var(--border); border-radius:50px; padding:0.3rem 0.65rem; font-family:var(--font-body); font-size:0.76rem; color:var(--text); cursor:pointer; transition:all 0.2s; }
+  .rv-cheer:hover { border-color:var(--accent); transform:translateY(-1px); }
+  .rv-chat-form { display:flex; gap:0.5rem; padding:0.7rem 1rem 1rem; }
+  .rv-chat-form input { flex:1; min-width:0; background:transparent; border:1px solid var(--border); border-radius:50px; color:var(--text); padding:0.6rem 0.9rem; font-family:var(--font-body); font-size:0.88rem; outline:none; }
+  .rv-chat-form input:focus { border-color:var(--accent); }
+  .rv-chat-form button { background:var(--accent); border:none; color:#fff; border-radius:50px; padding:0 1.1rem; font-family:var(--font-body); font-weight:600; font-size:0.84rem; cursor:pointer; }
+  .rv-fx { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:3; }
+  .rv-fx span { position:absolute; bottom:-2.5rem; line-height:1; will-change:transform,opacity; }
+  .rv-shake { animation:rvShake 0.55s ease; }
+  @keyframes rvShake { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-10px); } 40% { transform:translateX(10px); } 60% { transform:translateX(-6px); } 80% { transform:translateX(6px); } }
+  @media (max-width:860px) {
+    .rv-top { padding:0.7rem 1rem; }
+    .rv-title { font-size:1.2rem; width:100%; }
+    .rv-body { grid-template-columns:1fr; overflow-y:auto; }
+    .rv-main { overflow:visible; padding:1.2rem 1rem 1.5rem; }
+    .rv-chat { border-left:none; border-top:1px solid var(--border); height:65vh; flex:none; }
+    .rv-time { font-size:1.4rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .together-dot, .rv-lane.studying .rv-dot { animation:none; }
+    .rv-shake { animation:none; }
+  }
   .hidden { display:none !important; }
   @media (max-width:600px) {
-    .room-widget { top:auto; right:auto; bottom:1rem; left:1rem; width:calc(100vw - 5.2rem); max-width:260px; padding:0.7rem 0.8rem; }
-    .room-time { font-size:1.05rem; }
     .container { padding:1.2rem 1rem; gap:1.3rem; }
     .daily-goal-widget { width:150px; padding:0.7rem; top:1rem; left:1rem; }
     .daily-goal-header span:first-child { font-size:0.62rem; }
@@ -456,58 +532,93 @@
   </div>
 </div>
 
-<div class="room-widget hidden" id="roomWidget" aria-live="off">
-  <div class="room-head">
-    <span>Room <span class="room-code-chip" id="roomWidgetCode"></span></span>
-    <button class="btn-small" id="roomManageBtn" type="button">Manage</button>
-  </div>
-  <div class="room-members" id="roomMembers"></div>
-  <div class="room-note" id="roomNote"></div>
-</div>
-
 <div class="welcome-overlay" id="roomOverlay" role="dialog" aria-modal="true" aria-labelledby="roomTitle">
-  <div class="welcome-card" style="max-width:420px;">
+  <div class="welcome-card" style="max-width:440px;">
     <button class="modal-close" id="roomCloseBtn" type="button" aria-label="Close">×</button>
-    <h1 id="roomTitle" style="font-size:1.7rem;">Study Together</h1>
-    <p class="tagline" id="roomSubtitle">Up to 5 people. See each other's study time live.</p>
+    <h1 id="roomTitle" style="font-size:1.8rem;">Study Together</h1>
+    <p class="tagline" id="roomSubtitle">Race your friends to a shared goal. Everyone starts at 0:00.</p>
 
-    <div id="roomStepStart">
+    <div id="roomLobbyTop">
       <div class="room-field">
         <label for="roomName">Your name</label>
-        <input id="roomName" type="text" maxlength="24" placeholder="e.g. Ammar" autocomplete="nickname">
+        <input id="roomName" type="text" maxlength="24" placeholder="What should your friends call you?" autocomplete="off">
       </div>
-      <div class="room-field">
-        <label for="roomTargetNew">Shared target (hours, optional)</label>
-        <input id="roomTargetNew" type="number" min="0" max="100" step="0.5" placeholder="e.g. 4">
+      <div class="room-tabs">
+        <button class="room-tab active" id="roomTabCreate" type="button">Create a room</button>
+        <button class="room-tab" id="roomTabJoin" type="button">Join with a code</button>
       </div>
-      <button class="btn btn-main" id="roomCreateBtn" type="button" style="width:100%;">Create a room</button>
-      <div class="auth-divider"><span>or join a friend</span></div>
-      <div class="room-field">
-        <label for="roomCodeInput">Room code</label>
-        <input id="roomCodeInput" type="text" maxlength="6" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase; letter-spacing:0.25em; font-family:monospace; text-align:center;">
-      </div>
-      <button class="btn btn-ghost" id="roomJoinBtn" type="button" style="width:100%;">Join room</button>
     </div>
 
-    <div id="roomStepIn" class="hidden">
-      <p class="tagline" style="margin-bottom:0.2rem;">Share this code with your friends</p>
-      <div class="room-big-code" id="roomBigCode"></div>
-      <div class="room-row" style="justify-content:center; margin:0.5rem 0 1.2rem;">
-        <button class="btn-small" id="roomCopyBtn" type="button">Copy code</button>
-      </div>
-      <div class="room-field">
-        <label for="roomTargetEdit">Shared target (hours)</label>
-        <div class="room-row">
-          <input id="roomTargetEdit" type="number" min="0" max="100" step="0.5" placeholder="0 = no target">
-          <button class="btn-small" id="roomTargetSaveBtn" type="button">Save</button>
+    <div id="roomGoalPicker">
+      <div class="room-field" style="margin-bottom:0;">
+        <label>Room goal — study time each person races to</label>
+        <div class="goal-chips" id="goalChips">
+          <button type="button" class="goal-chip" data-min="60">1h</button>
+          <button type="button" class="goal-chip" data-min="120">2h</button>
+          <button type="button" class="goal-chip" data-min="180">3h</button>
+          <button type="button" class="goal-chip" data-min="240">4h</button>
+          <button type="button" class="goal-chip" data-min="360">6h</button>
+          <button type="button" class="goal-chip" data-min="0">No goal</button>
         </div>
+        <div class="goal-stepper">
+          <button type="button" id="goalMinus" aria-label="15 minutes less">−</button>
+          <div class="goal-value" id="goalValue">2h 00m</div>
+          <button type="button" id="goalPlus" aria-label="15 minutes more">+</button>
+        </div>
+        <p class="goal-hint" id="goalHint"></p>
       </div>
-      <button class="btn btn-ghost" id="roomLeaveBtn" type="button" style="width:100%;">Leave room</button>
     </div>
+
+    <button class="btn btn-main" id="roomCreateBtn" type="button" style="width:100%; margin-top:1.1rem;">Create room</button>
+
+    <div id="roomPanelJoin" class="hidden">
+      <div class="room-field">
+        <label for="roomCodeInput">Room code from your friend</label>
+        <input id="roomCodeInput" class="room-code-input" type="text" maxlength="6" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </div>
+      <button class="btn btn-main" id="roomJoinBtn" type="button" style="width:100%;">Join room</button>
+    </div>
+
+    <button class="btn btn-main hidden" id="roomGoalSaveBtn" type="button" style="width:100%; margin-top:1.1rem;">Save goal</button>
 
     <p class="auth-message" id="roomMessage" style="margin-top:0.9rem;"></p>
   </div>
 </div>
+
+<section class="room-view hidden" id="roomView" aria-label="Study Together room">
+  <header class="rv-top">
+    <div class="rv-title">Study Together</div>
+    <button class="rv-chip" id="rvCodeBtn" type="button" title="Copy the room code to invite friends">Room <b class="rv-code" id="rvCode"></b> <span id="rvCodeHint">Copy</span></button>
+    <button class="rv-chip" id="rvGoalBtn" type="button" title="Change the room goal">Goal <b id="rvGoal"></b></button>
+    <button class="rv-chip" id="rvNotifyBtn" type="button">Turn on notifications</button>
+    <button class="rv-chip danger" id="rvLeaveBtn" type="button">Leave room</button>
+  </header>
+  <div class="rv-body">
+    <div class="rv-main" id="rvMain">
+      <div class="rv-banner" id="rvBanner"></div>
+      <div class="rv-my-time" id="rvMyTime">00:00:00</div>
+      <div class="rv-my-sub" id="rvMySub">Your room time</div>
+      <div class="rv-controls">
+        <button class="btn btn-main" id="rvStartBtn" type="button">Start</button>
+        <button class="btn btn-icon hidden" id="rvPauseBtn" type="button" title="Pause">II</button>
+      </div>
+      <div class="rv-board">
+        <div class="rv-board-head"><span>Leaderboard</span><span id="rvCount"></span></div>
+        <div class="rv-lanes" id="rvLanes"></div>
+      </div>
+    </div>
+    <aside class="rv-chat">
+      <div class="rv-chat-head">Room chat</div>
+      <div class="rv-feed" id="rvFeed" aria-live="polite"></div>
+      <div class="rv-cheers" id="rvCheers"></div>
+      <form class="rv-chat-form" id="rvChatForm" autocomplete="off">
+        <input id="rvChatInput" type="text" maxlength="300" placeholder="Message your study buddies…" aria-label="Message">
+        <button type="submit">Send</button>
+      </form>
+    </aside>
+  </div>
+  <div class="rv-fx" id="rvFx" aria-hidden="true"></div>
+</section>
 
 <div class="daily-goal-widget" id="dailyGoalWidget">
   <div class="daily-goal-header">
@@ -559,6 +670,8 @@
     <button class="btn btn-icon" id="resetBtn" title="Reset">&#x21bb;</button>
   </div>
 
+  <button class="together-btn" id="roomOpenBtn" type="button"><span class="together-dot"></span>Study Together <small>race a friend, live</small></button>
+
   <div class="progress-section" id="progressSection">
     <div class="progress-header">
       <span id="progressLabel">Goal: 100 Hours</span>
@@ -589,10 +702,6 @@
     <button class="btn-small" id="accountBtn">Create / Sign in</button>
   </div>
   <div class="cloud-status" id="cloudStatus">Local only — progress stays on this device</div>
-  <div class="setting-row">
-    <span class="setting-label">Study Together</span>
-    <button class="btn-small" id="roomOpenBtn">Rooms</button>
-  </div>
   <div class="setting-row goal-setting-row" id="goalManageRow">
     <span class="setting-label">Goal &amp; deadline</span>
     <button class="btn-small" id="goalManageBtn">Change</button>
@@ -898,34 +1007,38 @@
   const ROOM_POLL_MS = 10000;
   const ROOM_HEARTBEAT_MS = 25000;
   const ROOM_STALE_MS = 150000;
+  const ROOM_CHEERS = [
+    { emoji: '🔥', text: "Let's go!" },
+    { emoji: '💪', text: 'Keep pushing' },
+    { emoji: '👏', text: 'Nice work' },
+    { emoji: '🎯', text: 'Locked in' },
+    { emoji: '☕', text: 'Break time?' }
+  ];
   const room = {
-    code: '', members: [], rows: [], target: 0, skew: 0,
+    code: '', members: [], lanes: new Map(), target: 0, skew: 0, loaded: false,
     channel: null, pollTimer: null, tickTimer: null, pushTimer: null, fetchTimer: null,
-    lastPush: 0, fetching: false, refetch: false
+    lastPush: 0, fetching: false, refetch: false,
+    // base = my all-time total at the moment I entered, so room time starts from 0
+    base: null, lastTotal: null, lastAt: 0, lastTrackSave: 0,
+    prev: null, leaderId: '', winnerId: '', goalPushed: false,
+    msgIds: new Set(), lastMsgId: 0, unread: 0, swReg: null,
+    goalMin: 120, overlayMode: 'lobby', tab: 'create'
   };
+  const roomEl = id => document.getElementById(id);
   const roomEls = {
-    widget: document.getElementById('roomWidget'),
-    widgetCode: document.getElementById('roomWidgetCode'),
-    manageBtn: document.getElementById('roomManageBtn'),
-    members: document.getElementById('roomMembers'),
-    note: document.getElementById('roomNote'),
-    overlay: document.getElementById('roomOverlay'),
-    closeBtn: document.getElementById('roomCloseBtn'),
-    openBtn: document.getElementById('roomOpenBtn'),
-    subtitle: document.getElementById('roomSubtitle'),
-    stepStart: document.getElementById('roomStepStart'),
-    stepIn: document.getElementById('roomStepIn'),
-    name: document.getElementById('roomName'),
-    targetNew: document.getElementById('roomTargetNew'),
-    createBtn: document.getElementById('roomCreateBtn'),
-    codeInput: document.getElementById('roomCodeInput'),
-    joinBtn: document.getElementById('roomJoinBtn'),
-    bigCode: document.getElementById('roomBigCode'),
-    copyBtn: document.getElementById('roomCopyBtn'),
-    targetEdit: document.getElementById('roomTargetEdit'),
-    targetSaveBtn: document.getElementById('roomTargetSaveBtn'),
-    leaveBtn: document.getElementById('roomLeaveBtn'),
-    message: document.getElementById('roomMessage')
+    openBtn: roomEl('roomOpenBtn'), overlay: roomEl('roomOverlay'), closeBtn: roomEl('roomCloseBtn'),
+    title: roomEl('roomTitle'), subtitle: roomEl('roomSubtitle'), lobbyTop: roomEl('roomLobbyTop'),
+    name: roomEl('roomName'), tabCreate: roomEl('roomTabCreate'), tabJoin: roomEl('roomTabJoin'),
+    goalPicker: roomEl('roomGoalPicker'), goalChips: roomEl('goalChips'), goalMinus: roomEl('goalMinus'),
+    goalPlus: roomEl('goalPlus'), goalValue: roomEl('goalValue'), goalHint: roomEl('goalHint'),
+    createBtn: roomEl('roomCreateBtn'), panelJoin: roomEl('roomPanelJoin'), codeInput: roomEl('roomCodeInput'),
+    joinBtn: roomEl('roomJoinBtn'), goalSaveBtn: roomEl('roomGoalSaveBtn'), message: roomEl('roomMessage'),
+    view: roomEl('roomView'), code: roomEl('rvCode'), codeBtn: roomEl('rvCodeBtn'), codeHint: roomEl('rvCodeHint'),
+    goalBtn: roomEl('rvGoalBtn'), goal: roomEl('rvGoal'), notifyBtn: roomEl('rvNotifyBtn'), leaveBtn: roomEl('rvLeaveBtn'),
+    banner: roomEl('rvBanner'), myTime: roomEl('rvMyTime'), mySub: roomEl('rvMySub'),
+    startBtn: roomEl('rvStartBtn'), pauseBtn: roomEl('rvPauseBtn'), count: roomEl('rvCount'), lanes: roomEl('rvLanes'),
+    feed: roomEl('rvFeed'), cheers: roomEl('rvCheers'), chatForm: roomEl('rvChatForm'), chatInput: roomEl('rvChatInput'),
+    fx: roomEl('rvFx')
   };
 
   const SUPABASE_URL = 'https://arvozknuyfqodotxgytt.supabase.co';
@@ -2362,9 +2475,10 @@
   });
 
   // ---------------------------------------------------------------------------------------------
-  // Study Together: rooms of up to 5 people. Each member publishes {status, today's ms} and every
-  // browser adds the elapsed time itself while a friend is 'studying', so counters tick live without
-  // anyone writing every second. Needs supabase-multiplayer.sql to have been run.
+  // Study Together: rooms of up to 5 people racing to a shared goal, with live chat.
+  // Each member publishes {status, room time} and every browser adds the elapsed time itself while
+  // a friend is 'studying', so counters tick live without anyone writing every second.
+  // Room time starts at 0 when you enter. Needs supabase-multiplayer.sql to have been run.
   // ---------------------------------------------------------------------------------------------
   function roomStore(key, value) {
     try {
@@ -2373,16 +2487,71 @@
     } catch (e) {}
     return '';
   }
+  function roomNode(tag, cls, text) {
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+  function roomClock(ms) { return formatTime(Math.max(0, ms)).slice(0, -2); }
+  function roomFmtGoal(min) {
+    const h = Math.floor(min / 60), m = Math.round(min % 60);
+    if (!m) return h + 'h';
+    return h ? h + 'h ' + String(m).padStart(2, '0') + 'm' : m + 'm';
+  }
+  function roomFmtGap(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    if (s < 60) return s + 's';
+    if (s < 3600) return Math.floor(s / 60) + 'm ' + String(s % 60).padStart(2, '0') + 's';
+    return Math.floor(s / 3600) + 'h ' + String(Math.floor((s % 3600) / 60)).padStart(2, '0') + 'm';
+  }
 
   function roomMyStatus() {
     return state.sessionRunning ? (state.paused ? 'paused' : 'studying') : 'idle';
   }
+  // Time I have studied since entering the room
+  function roomMyMs() {
+    return room.base === null ? 0 : Math.max(0, liveTotalMs() - room.base);
+  }
+  function roomSaveTrack() {
+    if (!room.code || !cloudUser || room.base === null) return;
+    room.lastTrackSave = Date.now();
+    roomStore('stackRoomTrack', JSON.stringify({
+      code: room.code, uid: cloudUser.id, base: room.base, lastTotal: room.lastTotal, lastAt: room.lastAt
+    }));
+  }
+  function roomLoadTrack() {
+    try {
+      const t = JSON.parse(roomStore('stackRoomTrack') || 'null');
+      if (t && cloudUser && t.code === room.code && t.uid === cloudUser.id && isFinite(Number(t.base))) {
+        room.base = Number(t.base);
+        room.lastTotal = t.lastTotal === null || t.lastTotal === undefined ? null : Number(t.lastTotal);
+        room.lastAt = Number(t.lastAt) || 0;
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+  // If my total changes for a reason other than studying (restore, reset, account merge), move the
+  // baseline with it so my room time is not affected.
+  function roomTrack() {
+    if (room.base === null) return;
+    const total = liveTotalMs();
+    const now = Date.now();
+    if (room.lastTotal !== null) {
+      const delta = total - room.lastTotal;
+      if (delta < -1000 || delta > (now - room.lastAt) + 2000) room.base += delta;
+    }
+    room.lastTotal = total;
+    room.lastAt = now;
+    if (now - room.lastTrackSave > 5000) roomSaveTrack();
+  }
 
   async function roomPushNow() {
-    if (!room.code || !supabaseClient || !cloudUser) return;
+    if (!room.code || !supabaseClient || !cloudUser || room.base === null) return;
     room.lastPush = Date.now();
     const { error } = await supabaseClient.from('room_members')
-      .update({ status: roomMyStatus(), elapsed_ms: Math.max(0, Math.floor(liveTodayMs())) })
+      .update({ status: roomMyStatus(), elapsed_ms: Math.floor(roomMyMs()) })
       .eq('room_code', room.code).eq('user_id', cloudUser.id);
     if (error) console.warn('Room update failed', error);
   }
@@ -2404,19 +2573,39 @@
       const { data, error } = await supabaseClient.rpc('room_snapshot', { p_code: room.code });
       const t1 = Date.now();
       if (error) {
-        if (String(error.message || '').includes('not_a_member')) roomForget('You are no longer in that room.');
+        if (String(error.message || '').includes('not_a_member')) roomForget();
         else throw error;
         return;
       }
+      if (!room.code) return;
       // Corrects for this computer's clock being off, so everyone's live counters agree
       room.skew = Number(data.server_now_ms) - (t0 + t1) / 2;
+      const members = Array.isArray(data.members) ? data.members : [];
+      const prevTarget = room.target;
       room.target = Number(data.target_hours) || 0;
-      room.members = Array.isArray(data.members) ? data.members : [];
-      roomBuild();
+      if (prevTarget !== room.target) room.goalPushed = false;
+      if (room.base === null) {
+        // First time on this device for this room: continue from what the server has for me (0 when new)
+        const mine = members.find(m => m.is_me);
+        let mineMs = mine ? Number(mine.elapsed_ms) || 0 : 0;
+        if (mine && mine.status === 'studying' && state.sessionRunning && !state.paused) {
+          // My timer has kept running since that value was saved (e.g. I just switched device)
+          mineMs += Math.max(0, Math.min(ROOM_STALE_MS, Number(data.server_now_ms) - Number(mine.updated_ms)));
+        }
+        room.base = liveTotalMs() - mineMs;
+        room.lastTotal = liveTotalMs();
+        room.lastAt = Date.now();
+        roomSaveTrack();
+        roomPushNow();
+      }
+      if (room.loaded) roomDiff(room.members, members, prevTarget);
+      room.members = members;
+      room.loaded = true;
+      roomSyncLanes();
       roomTick();
     } catch (e) {
       console.warn('Room sync failed', e);
-      roomEls.note.textContent = 'Reconnecting… (have you run supabase-multiplayer.sql?)';
+      if (!room.loaded) roomEls.banner.textContent = 'Connecting to the room…';
     } finally {
       room.fetching = false;
       if (room.refetch) { room.refetch = false; roomQueueFetch(); }
@@ -2427,149 +2616,444 @@
     room.fetchTimer = setTimeout(roomFetch, 120);
   }
 
-  function roomBuild() {
-    roomEls.members.textContent = '';
-    room.rows = room.members.map(m => {
-      const el = document.createElement('div');
-      el.className = 'room-member';
-      const top = document.createElement('div');
-      top.className = 'room-member-top';
-      const name = document.createElement('span');
-      name.className = 'room-name';
-      name.textContent = String(m.name || 'Student') + (m.is_me ? ' (you)' : '');
-      const time = document.createElement('span');
-      time.className = 'room-time';
-      time.textContent = '00:00:00';
-      top.append(name, time);
-      const status = document.createElement('div');
-      status.className = 'room-status';
-      const dot = document.createElement('span');
-      dot.className = 'room-dot';
-      const label = document.createElement('span');
-      status.append(dot, label);
-      const bar = document.createElement('div');
-      bar.className = 'room-bar';
-      const fill = document.createElement('div');
-      bar.append(fill);
-      el.append(top, status, bar);
-      roomEls.members.append(el);
-      return { m, el, time, label, bar, fill };
+  // Turn changes between two snapshots into feed lines ("Ali started studying")
+  function roomDiff(before, after, prevTarget) {
+    const old = new Map(before.map(m => [m.user_id, m]));
+    const ids = new Set(after.map(m => m.user_id));
+    after.forEach(m => {
+      if (m.is_me) return;
+      const o = old.get(m.user_id);
+      if (!o) {
+        roomSys(m.name + ' joined the room', true);
+        roomNotify(m.name + ' joined your room', 'Time to study together.');
+        return;
+      }
+      if (o.status === m.status) return;
+      if (m.status === 'studying') roomSys(m.name + (o.status === 'paused' ? ' is back at it' : ' started studying'));
+      else if (m.status === 'paused') roomSys(m.name + ' paused');
+      else roomSys(m.name + ' stopped for now');
+    });
+    before.forEach(o => { if (!o.is_me && !ids.has(o.user_id)) roomSys(o.name + ' left the room'); });
+    if (prevTarget !== room.target) {
+      roomSys(room.target > 0 ? 'Goal set to ' + roomFmtGoal(Math.round(room.target * 60)) : 'Goal removed', true);
+    }
+  }
+
+  function roomSyncLanes() {
+    const ids = new Set(room.members.map(m => m.user_id));
+    room.lanes.forEach((lane, id) => {
+      if (!ids.has(id)) { lane.el.remove(); room.lanes.delete(id); }
+    });
+    room.members.forEach(m => {
+      if (room.lanes.has(m.user_id)) return;
+      const el = roomNode('div', 'rv-lane' + (m.is_me ? ' me' : ''));
+      const rank = roomNode('div', 'rv-rank', '1');
+      const who = roomNode('div', 'rv-who');
+      const name = roomNode('div', 'rv-name');
+      const status = roomNode('div', 'rv-status');
+      const label = roomNode('span');
+      status.append(roomNode('span', 'rv-dot'), label);
+      let nudge = null;
+      if (!m.is_me) {
+        nudge = roomNode('button', 'rv-nudge', 'Nudge 👋');
+        nudge.type = 'button';
+        nudge.title = 'Send a friendly push to get back to studying';
+        nudge.addEventListener('click', () => roomNudge(m.user_id, nudge));
+        status.append(nudge);
+      }
+      who.append(name, status);
+      const time = roomNode('div', 'rv-time', '00:00:00');
+      const track = roomNode('div', 'rv-track');
+      const fill = roomNode('div');
+      track.append(fill);
+      el.append(rank, who, time, track);
+      roomEls.lanes.append(el);
+      room.lanes.set(m.user_id, { el, rank, name, label, nudge, time, track, fill });
     });
   }
 
-  function roomView(m, nowSrv) {
-    if (m.is_me) return { status: roomMyStatus(), ms: liveTodayMs() };
-    const age = nowSrv - Number(m.updated_ms);
-    let status = m.status;
-    let ms = Number(m.elapsed_ms) || 0;
-    if (status === 'studying') {
-      if (age > ROOM_STALE_MS) status = 'offline';
-      else ms += Math.max(0, age);
-    }
-    return { status, ms };
+  function roomViews() {
+    const nowSrv = Date.now() + room.skew;
+    return room.members.map(m => {
+      let status = m.status;
+      let ms = Number(m.elapsed_ms) || 0;
+      if (m.is_me) {
+        status = roomMyStatus();
+        ms = roomMyMs();
+      } else if (status === 'studying') {
+        const age = nowSrv - Number(m.updated_ms);
+        if (age > ROOM_STALE_MS) status = 'offline'; else ms += Math.max(0, age);
+      }
+      return {
+        id: m.user_id, name: String(m.name || 'Student'), isMe: Boolean(m.is_me), status, ms,
+        reached: m.reached_ms === null || m.reached_ms === undefined ? null : Number(m.reached_ms)
+      };
+    });
   }
+
+  const ROOM_STATUS_LABEL = { studying: 'Studying', paused: 'Paused', idle: 'Not studying', offline: 'Offline' };
 
   function roomTick() {
     if (!room.code) return;
-    const nowSrv = Date.now() + room.skew;
+    roomTrack();
+    const running = state.sessionRunning && !state.paused;
+    const myMs = roomMyMs();
+    roomEls.myTime.textContent = roomClock(myMs);
+    roomEls.myTime.classList.toggle('running', running);
+    roomEls.mySub.textContent = state.sessionRunning
+      ? (state.paused ? 'Paused · session ' : 'This session ') + roomClock(liveSessionMs())
+      : 'Your room time · press start to race';
+    roomEls.startBtn.textContent = state.sessionRunning ? (state.paused ? 'Resume' : 'Stop') : 'Start';
+    roomEls.pauseBtn.classList.toggle('hidden', !running);
+
     const targetMs = room.target * 3600000;
-    room.rows.forEach(r => {
-      const v = roomView(r.m, nowSrv);
-      r.time.textContent = formatTime(v.ms).slice(0, -2);
-      r.label.textContent = { studying: 'Studying', paused: 'Paused', idle: 'Not started', offline: 'Offline' }[v.status] || '';
-      r.el.classList.toggle('studying', v.status === 'studying');
-      r.el.classList.toggle('paused', v.status === 'paused');
-      r.el.classList.toggle('offline', v.status === 'offline');
-      const hasTarget = targetMs > 0;
-      r.bar.classList.toggle('hidden', !hasTarget);
-      if (hasTarget) {
-        const pct = Math.min(100, (v.ms / targetMs) * 100);
-        r.fill.style.width = pct + '%';
-        r.el.classList.toggle('done', pct >= 100);
-        if (pct >= 100) r.label.textContent += ' · target reached';
-      }
+    const views = roomViews().sort((a, b) => b.ms - a.ms);
+    views.forEach((v, i) => {
+      const lane = room.lanes.get(v.id);
+      if (!lane) return;
+      const done = targetMs > 0 && v.ms >= targetMs;
+      lane.el.style.order = String(i);
+      lane.rank.textContent = String(i + 1);
+      lane.name.textContent = v.name + (v.isMe ? ' (you)' : '');
+      lane.time.textContent = roomClock(v.ms);
+      lane.label.textContent = ROOM_STATUS_LABEL[v.status] + (done ? ' · goal reached' : '');
+      lane.el.classList.toggle('studying', v.status === 'studying');
+      lane.el.classList.toggle('paused', v.status === 'paused');
+      lane.el.classList.toggle('offline', v.status === 'offline');
+      lane.el.classList.toggle('leader', i === 0 && v.ms > 0 && views.length > 1);
+      lane.el.classList.toggle('done', done);
+      lane.track.classList.toggle('hidden', targetMs <= 0);
+      if (targetMs > 0) lane.fill.style.width = Math.min(100, (v.ms / targetMs) * 100) + '%';
+      if (lane.nudge) lane.nudge.classList.toggle('hidden', v.status === 'studying');
     });
-    const parts = [];
-    if (room.target > 0) parts.push('Target: ' + room.target + 'h each');
-    if (room.members.length < 2) parts.push('Waiting for friends — share the code ' + room.code);
-    roomEls.note.textContent = parts.join(' · ');
-    roomEls.note.classList.toggle('hidden', !parts.length);
+    roomEls.count.textContent = views.length + ' / 5 in room';
+    roomEls.goal.textContent = room.target > 0 ? roomFmtGoal(Math.round(room.target * 60)) : 'none';
+
+    // Tell the server the moment I cross the goal, so the winner is decided promptly
+    if (targetMs > 0 && myMs >= targetMs && !room.goalPushed) { room.goalPushed = true; roomPushNow(); }
+    roomJudge(views, targetMs);
   }
 
-  function roomShow() {
-    roomEls.widget.classList.remove('hidden');
-    roomEls.widgetCode.textContent = room.code;
-    clearInterval(room.pollTimer);
-    clearInterval(room.tickTimer);
-    room.pollTimer = setInterval(roomFetch, ROOM_POLL_MS);
-    room.tickTimer = setInterval(() => { if (!document.hidden) roomTick(); }, 200);
-    if (room.channel) { supabaseClient.removeChannel(room.channel); room.channel = null; }
-    room.channel = supabaseClient.channel('stack-room-' + room.code)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_members', filter: 'room_code=eq.' + room.code }, roomQueueFetch)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'study_rooms', filter: 'code=eq.' + room.code }, roomQueueFetch)
-      .subscribe();
+  // Who is leading, who won, and what the banner says about it
+  function roomJudge(views, targetMs) {
+    const me = views.find(v => v.isMe);
+    const leader = views.length && views[0].ms > 0 ? views[0] : null;
+    const leaderId = leader && views.length > 1 ? leader.id : '';
+    if (leaderId && room.leaderId && leaderId !== room.leaderId) {
+      roomSys((leader.isMe ? 'You' : leader.name) + ' took the lead', true);
+    }
+    if (leaderId) room.leaderId = leaderId;
+
+    const reached = views.filter(v => v.reached !== null).sort((a, b) => (a.reached - b.reached) || (b.ms - a.ms));
+    const winner = targetMs > 0 && reached.length ? reached[0] : null;
+    const winnerId = winner ? winner.id : '';
+    if (winnerId && winnerId !== room.winnerId && room.judged) {
+      roomSys('🏆 ' + (winner.isMe ? 'You' : winner.name) + ' reached the goal first!', true);
+      roomBurst('🏆', 18);
+      if (!winner.isMe) roomNotify(winner.name + ' reached the goal first', 'Keep going — finish your own goal.');
+    }
+    room.winnerId = winnerId;
+    room.judged = room.loaded;
+
+    const toGoal = me && targetMs > me.ms ? roomFmtGap(targetMs - me.ms) + ' to the goal' : '';
+    let text = '';
+    let cls = '';
+    if (!room.loaded) {
+      text = 'Connecting to the room…';
+    } else if (winner) {
+      cls = 'win';
+      text = winner.isMe ? 'You hit the goal first. Winner!' : winner.name + ' hit the goal first';
+      if (!winner.isMe && toGoal) text += ' · you have ' + toGoal;
+    } else if (views.length < 2) {
+      text = 'Waiting for friends — share the room code ' + room.code;
+    } else if (!leader) {
+      text = 'Nobody has started yet. First to press start takes the lead.';
+    } else if (leader.isMe) {
+      cls = 'lead';
+      text = 'You lead ' + views[1].name + ' by ' + roomFmtGap(leader.ms - views[1].ms);
+      if (toGoal) text += ' · ' + toGoal;
+    } else if (me) {
+      text = leader.name + ' leads — you are ' + roomFmtGap(leader.ms - me.ms) + ' behind';
+      if (toGoal) text += ' · ' + toGoal;
+    }
+    roomEls.banner.textContent = text;
+    roomEls.banner.classList.toggle('win', cls === 'win');
+    roomEls.banner.classList.toggle('lead', cls === 'lead');
   }
 
-  // Stop showing/syncing the room on this device (does not leave it)
+  // ---- chat, cheers, nudges ----
+  function roomFeedAdd(el) {
+    const feed = roomEls.feed;
+    const nearBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 90;
+    feed.append(el);
+    while (feed.children.length > 200) feed.children[0].remove();
+    if (nearBottom) feed.scrollTop = feed.scrollHeight;
+  }
+  function roomSys(text, hot) {
+    roomFeedAdd(roomNode('div', 'rv-sys' + (hot ? ' hot' : ''), text));
+  }
+  function roomUnread() {
+    if (!document.hidden) return;
+    room.unread++;
+    if (!titleFlashId) document.title = '(' + room.unread + ') ' + defaultDocumentTitle;
+  }
+
+  function roomAddMessage(msg, silent) {
+    if (!msg || !room.code) return;
+    const id = Number(msg.id);
+    if (room.msgIds.has(id)) return;
+    room.msgIds.add(id);
+    if (id > room.lastMsgId) room.lastMsgId = id;
+    const mine = Boolean(cloudUser && msg.user_id === cloudUser.id);
+    const who = mine ? 'You' : String(msg.display_name || 'Friend');
+    const body = String(msg.body || '');
+
+    if (msg.kind === 'nudge') {
+      const forMe = Boolean(cloudUser && msg.target_user === cloudUser.id);
+      const target = room.members.find(m => m.user_id === msg.target_user);
+      roomSys(who + ' nudged ' + (forMe ? 'you' : (target ? target.name : 'a friend')) + ' 👋', forMe);
+      if (!silent && forMe) {
+        roomEls.myTime.classList.remove('rv-shake');
+        void roomEls.myTime.offsetWidth;
+        roomEls.myTime.classList.add('rv-shake');
+        roomBurst('👋', 8);
+        roomNotify(who + ' nudged you', 'Get back to studying — they are waiting for you.');
+        roomUnread();
+      }
+      return;
+    }
+
+    const el = roomNode('div', 'rv-msg' + (mine ? ' mine' : '') + (msg.kind === 'cheer' ? ' cheer' : ''));
+    if (!mine) el.append(roomNode('div', 'rv-msg-name', who));
+    el.append(roomNode('div', 'rv-msg-body', body));
+    roomFeedAdd(el);
+    if (silent) return;
+    if (msg.kind === 'cheer') {
+      const cheer = ROOM_CHEERS.find(c => body.indexOf(c.emoji) === 0);
+      roomBurst(cheer ? cheer.emoji : '✨', 14);
+    }
+    if (!mine) {
+      roomNotify(who, body);
+      roomUnread();
+    }
+  }
+
+  async function roomFetchMessages() {
+    if (!room.code || !supabaseClient || !cloudUser) return;
+    const initial = !room.msgLoaded;
+    const base = supabaseClient.from('room_messages')
+      .select('id,user_id,display_name,kind,body,target_user,created_at')
+      .eq('room_code', room.code);
+    const { data, error } = initial
+      ? await base.order('id', { ascending: false }).limit(50)
+      : await base.gt('id', room.lastMsgId).order('id', { ascending: true }).limit(100);
+    if (error) { console.warn('Room chat sync failed', error); return; }
+    const rows = initial ? (data || []).slice().reverse() : (data || []);
+    rows.forEach(r => roomAddMessage(r, initial));
+    if (initial) {
+      room.msgLoaded = true;
+      roomEls.feed.scrollTop = roomEls.feed.scrollHeight;
+    }
+  }
+
+  async function roomSend(kind, body, target) {
+    if (!room.code || !supabaseClient) return false;
+    const { error } = await supabaseClient.rpc('send_room_message', {
+      p_code: room.code, p_kind: kind, p_body: body, p_target: target || null
+    });
+    if (error) { roomSys(roomError(error)); return false; }
+    roomFetchMessages();
+    return true;
+  }
+
+  function roomNudge(userId, button) {
+    button.disabled = true;
+    setTimeout(() => { button.disabled = false; }, 15000);
+    roomSend('nudge', 'Nudge', userId);
+  }
+
+  // Floating emoji when someone cheers (Motion when available, Web Animations otherwise)
+  function roomBurst(emoji, count) {
+    if (!roomEls.fx || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    for (let i = 0; i < count; i++) {
+      const el = roomNode('span', '', emoji);
+      el.style.left = (4 + Math.random() * 92) + '%';
+      el.style.fontSize = (1.3 + Math.random() * 1.5) + 'rem';
+      roomEls.fx.append(el);
+      const rise = -(55 + Math.random() * 35) * (window.innerHeight || 800) / 100;
+      const drift = (Math.random() - 0.5) * 120;
+      const spin = (Math.random() - 0.5) * 80;
+      const duration = 1.7 + Math.random() * 1.1;
+      const delay = Math.random() * 0.45;
+      try {
+        if (window.Motion && window.Motion.animate) {
+          window.Motion.animate(el, { y: [0, rise], x: [0, drift], rotate: [0, spin], opacity: [0, 1, 1, 0] },
+            { duration, delay, ease: 'easeOut' });
+        } else if (el.animate) {
+          el.animate([
+            { transform: 'translate(0,0) rotate(0deg)', opacity: 0 },
+            { opacity: 1, offset: 0.15 },
+            { transform: 'translate(' + drift + 'px,' + rise + 'px) rotate(' + spin + 'deg)', opacity: 0 }
+          ], { duration: duration * 1000, delay: delay * 1000, easing: 'ease-out', fill: 'both' });
+        }
+      } catch (e) {}
+      setTimeout(() => el.remove(), (duration + delay) * 1000 + 150);
+    }
+  }
+
+  // ---- notifications ----
+  function roomNotifyState() {
+    return typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
+  }
+  function roomRenderNotify() {
+    const s = roomNotifyState();
+    roomEls.notifyBtn.classList.toggle('hidden', s === 'unsupported');
+    roomEls.notifyBtn.classList.toggle('on', s === 'granted');
+    roomEls.notifyBtn.textContent = s === 'granted' ? 'Notifications on'
+      : s === 'denied' ? 'Notifications blocked' : 'Turn on notifications';
+    roomEls.notifyBtn.title = s === 'denied'
+      ? 'Notifications are blocked for this site. Allow them in your browser’s site settings.'
+      : 'Get notified about chat messages and nudges while StackTime is in the background';
+  }
+  // A small service worker lets phones show notifications and lets a click bring StackTime back
+  function roomRegisterSW() {
+    try {
+      if (room.swReg || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') return;
+      navigator.serviceWorker.register('sw.js').then(reg => { room.swReg = reg; }).catch(() => {});
+    } catch (e) {}
+  }
+  async function roomAskNotify() {
+    if (roomNotifyState() === 'default') {
+      try { await Notification.requestPermission(); } catch (e) {}
+    }
+    roomRenderNotify();
+    if (roomNotifyState() === 'granted') roomRegisterSW();
+  }
+  function roomNotify(title, body) {
+    if (roomNotifyState() !== 'granted') return;
+    if (!document.hidden && (!document.hasFocus || document.hasFocus())) return;
+    const opts = { body: String(body || '').slice(0, 140), icon: 'assets/logo-192.png', badge: 'assets/logo-192.png', tag: 'stacktime-room', renotify: true };
+    const direct = () => {
+      try {
+        const n = new Notification(title, opts);
+        n.onclick = () => { window.focus(); n.close(); };
+      } catch (e) {}
+    };
+    if (room.swReg && room.swReg.showNotification) room.swReg.showNotification(title, opts).catch(direct);
+    else direct();
+  }
+
+  // ---- entering and leaving ----
   function roomStop() {
     clearInterval(room.pollTimer);
     clearInterval(room.tickTimer);
     clearTimeout(room.pushTimer);
     clearTimeout(room.fetchTimer);
-    if (room.channel && supabaseClient) { supabaseClient.removeChannel(room.channel); }
+    if (room.channel && supabaseClient) supabaseClient.removeChannel(room.channel);
     room.channel = null;
     room.code = '';
     room.members = [];
-    room.rows = [];
-    roomEls.members.textContent = '';
-    roomEls.widget.classList.add('hidden');
+    room.lanes.forEach(lane => lane.el.remove());
+    room.lanes.clear();
+    room.loaded = false;
+    room.judged = false;
+    room.msgLoaded = false;
+    room.base = null;
+    room.lastTotal = null;
+    room.target = 0;
+    room.leaderId = '';
+    room.winnerId = '';
+    room.goalPushed = false;
+    room.msgIds.clear();
+    room.lastMsgId = 0;
+    room.unread = 0;
+    roomEls.feed.textContent = '';
+    roomEls.view.classList.add('hidden');
+    if (!titleFlashId) document.title = defaultDocumentTitle;
   }
 
-  function roomForget(message) {
+  function roomForget() {
     roomStop();
     roomStore('stackRoomCode', null);
-    roomSetStep();
-    roomEls.message.textContent = message || '';
+    roomStore('stackRoomTrack', null);
   }
 
-  function roomEnter(code) {
+  function roomStart(code) {
+    roomStop();
     room.code = code;
     roomStore('stackRoomCode', code);
-    roomShow();
+    roomLoadTrack();
+    // The room races the session timer; leave Practice/Timer mode if nothing is running
+    if (!anyTimerRunning() && state.mode !== 'session') setMode('session');
+    settingsPanel.classList.remove('open');
+    roomEls.overlay.classList.remove('open');
+    roomEls.code.textContent = code;
+    roomEls.view.classList.remove('hidden');
+    roomRenderNotify();
+    if (roomNotifyState() === 'granted') roomRegisterSW();
+    room.pollTimer = setInterval(() => { roomFetch(); roomFetchMessages(); }, ROOM_POLL_MS);
+    room.tickTimer = setInterval(() => { if (!document.hidden) roomTick(); }, 200);
+    room.channel = supabaseClient.channel('stack-room-' + code)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_members', filter: 'room_code=eq.' + code }, roomQueueFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'study_rooms', filter: 'code=eq.' + code }, roomQueueFetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'room_messages', filter: 'room_code=eq.' + code },
+        payload => roomAddMessage(payload && payload.new, false))
+      .subscribe();
+    roomTick();
     roomFetch();
-    roomPushNow();
-    roomSetStep();
+    roomFetchMessages();
   }
 
-  // Re-join the room remembered on this device once we know who is signed in
+  // Re-enter the room remembered on this device once we know who is signed in
   function roomResume() {
     const saved = roomStore('stackRoomCode');
-    if (!saved || !cloudUser || room.code === saved) return;
-    room.code = saved;
-    roomShow();
-    roomFetch();
-    roomPushNow();
-    roomSetStep();
+    if (!saved || !cloudUser || !supabaseClient || room.code === saved) return;
+    roomStart(saved);
   }
 
   function roomResync() {
     if (!room.code) return;
+    room.unread = 0;
+    if (!titleFlashId) document.title = defaultDocumentTitle;
+    roomTick();
     roomFetch();
+    roomFetchMessages();
     roomPushNow();
   }
 
-  function roomSetStep() {
-    const inRoom = Boolean(room.code);
-    roomEls.stepStart.classList.toggle('hidden', inRoom);
-    roomEls.stepIn.classList.toggle('hidden', !inRoom);
-    roomEls.bigCode.textContent = room.code;
-    roomEls.subtitle.textContent = inRoom
-      ? 'You are in a room. Friends see your time live.'
-      : 'Up to 5 people. See each other’s study time live.';
-    if (inRoom) roomEls.targetEdit.value = room.target || '';
+  // ---- lobby (create / join) and goal picker ----
+  function roomRenderGoal() {
+    const min = room.goalMin;
+    roomEls.goalValue.textContent = min === 0 ? 'No goal'
+      : Math.floor(min / 60) + 'h ' + String(min % 60).padStart(2, '0') + 'm';
+    roomGoalChipList.forEach(chip => chip.classList.toggle('active', Number(chip.dataset.min) === min));
+    roomEls.goalHint.textContent = min === 0
+      ? 'No finish line — study side by side and see who goes longest.'
+      : 'Everyone starts at 0:00. First to study ' + roomFmtGoal(min) + ' in this room wins.';
+  }
+  function roomSetGoal(min) {
+    room.goalMin = Math.max(0, Math.min(24 * 60, Math.round(min / 15) * 15));
+    roomRenderGoal();
+  }
+  function roomLayoutOverlay() {
+    const goalMode = room.overlayMode === 'goal';
+    const create = room.tab === 'create';
+    roomEls.title.textContent = goalMode ? 'Room goal' : 'Study Together';
+    roomEls.subtitle.textContent = goalMode
+      ? 'Changing the goal restarts the race to the finish for everyone.'
+      : 'Race your friends to a shared goal. Everyone starts at 0:00.';
+    roomEls.lobbyTop.classList.toggle('hidden', goalMode);
+    roomEls.goalPicker.classList.toggle('hidden', !goalMode && !create);
+    roomEls.createBtn.classList.toggle('hidden', goalMode || !create);
+    roomEls.panelJoin.classList.toggle('hidden', goalMode || create);
+    roomEls.goalSaveBtn.classList.toggle('hidden', !goalMode);
+    roomEls.tabCreate.classList.toggle('active', create);
+    roomEls.tabJoin.classList.toggle('active', !create);
+    roomRenderGoal();
   }
 
-  function roomOpenOverlay() {
+  function roomOpenLobby() {
     settingsPanel.classList.remove('open');
     if (!supabaseClient) { alert('Study Together could not load. Check your connection and refresh.'); return; }
     if (!cloudUser) {
@@ -2577,18 +3061,33 @@
       authSubtitle.textContent = 'Create a free account (or sign in) to study together with friends.';
       return;
     }
-    if (!roomEls.name.value) {
-      roomEls.name.value = roomStore('stackRoomName') || String(cloudUser.email || '').split('@')[0].slice(0, 24);
-    }
+    if (room.code) { roomEls.view.classList.remove('hidden'); return; }
+    room.overlayMode = 'lobby';
+    // Only ever a name the person typed here before - never taken from their email
+    if (!roomEls.name.value) roomEls.name.value = roomStore('stackRoomDisplayName');
+    roomEls.name.classList.remove('invalid');
     roomEls.message.textContent = '';
-    roomSetStep();
+    roomLayoutOverlay();
     roomEls.overlay.classList.add('open');
+    if (!roomEls.name.value) roomEls.name.focus();
+  }
+
+  function roomRequireName() {
+    const name = roomEls.name.value.trim().slice(0, 24);
+    if (!name) {
+      roomEls.name.classList.add('invalid');
+      roomEls.name.focus();
+      throw new Error('Add your name first, so your friends know who they are racing.');
+    }
+    roomEls.name.classList.remove('invalid');
+    roomStore('stackRoomDisplayName', name);
+    return name;
   }
 
   function roomError(error) {
     const msg = String((error && error.message) || error || '');
-    if (/function .* does not exist|schema cache|relation .* does not exist/i.test(msg)) {
-      return 'Rooms are not set up yet: run supabase-multiplayer.sql in Supabase, then try again.';
+    if (/does not exist|schema cache|could not find the function/i.test(msg)) {
+      return 'Rooms need a database update: run supabase-multiplayer.sql in Supabase, then try again.';
     }
     return msg || 'Something went wrong. Please try again.';
   }
@@ -2603,52 +3102,95 @@
     finally { button.disabled = false; button.textContent = label; }
   }
 
-  roomEls.openBtn.addEventListener('click', roomOpenOverlay);
-  roomEls.manageBtn.addEventListener('click', roomOpenOverlay);
+  const roomGoalChipList = Array.from(roomEls.goalChips.querySelectorAll('.goal-chip'));
+  roomGoalChipList.forEach(chip => chip.addEventListener('click', () => roomSetGoal(Number(chip.dataset.min))));
+  roomEls.goalMinus.addEventListener('click', () => roomSetGoal(room.goalMin - 15));
+  roomEls.goalPlus.addEventListener('click', () => roomSetGoal(room.goalMin + 15));
+  roomEls.tabCreate.addEventListener('click', () => { room.tab = 'create'; roomLayoutOverlay(); });
+  roomEls.tabJoin.addEventListener('click', () => { room.tab = 'join'; roomLayoutOverlay(); roomEls.codeInput.focus(); });
+  roomEls.name.addEventListener('input', () => roomEls.name.classList.remove('invalid'));
+  roomEls.openBtn.addEventListener('click', roomOpenLobby);
   roomEls.closeBtn.addEventListener('click', () => roomEls.overlay.classList.remove('open'));
 
   roomEls.createBtn.addEventListener('click', () => roomRun(roomEls.createBtn, 'Creating…', async () => {
-    const name = roomEls.name.value.trim();
-    roomStore('stackRoomName', name);
-    const { data, error } = await supabaseClient.rpc('create_room', {
-      p_name: name, p_target: Number(roomEls.targetNew.value) || 0
-    });
+    const name = roomRequireName();
+    roomAskNotify();
+    const { data, error } = await supabaseClient.rpc('create_room', { p_name: name, p_target: room.goalMin / 60 });
     if (error) throw error;
-    roomEnter(String(data));
+    roomStart(String(data));
+    roomSys('Room created. Share the code ' + String(data) + ' with your friends.', true);
   }));
 
   roomEls.joinBtn.addEventListener('click', () => roomRun(roomEls.joinBtn, 'Joining…', async () => {
+    const name = roomRequireName();
     const code = roomEls.codeInput.value.trim().toUpperCase();
-    if (!/^[A-Z0-9]{6}$/.test(code)) throw new Error('Enter the 6-character room code.');
-    const name = roomEls.name.value.trim();
-    roomStore('stackRoomName', name);
+    if (!/^[A-Z0-9]{6}$/.test(code)) throw new Error('Enter the 6-character room code your friend shared.');
+    roomAskNotify();
     const { data, error } = await supabaseClient.rpc('join_room', { p_code: code, p_name: name });
     if (error) throw error;
-    roomEnter(String(data));
-    roomEls.overlay.classList.remove('open');
+    roomStart(String(data));
+    roomSys('You joined the room. Your room time starts at 0:00.', true);
   }));
-
   roomEls.codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') roomEls.joinBtn.click(); });
 
-  roomEls.targetSaveBtn.addEventListener('click', () => roomRun(roomEls.targetSaveBtn, 'Saving…', async () => {
-    const { error } = await supabaseClient.rpc('set_room_target', { p_code: room.code, p_hours: Number(roomEls.targetEdit.value) || 0 });
+  roomEls.goalBtn.addEventListener('click', () => {
+    room.overlayMode = 'goal';
+    room.goalMin = Math.round(room.target * 60 / 15) * 15;
+    roomEls.message.textContent = '';
+    roomLayoutOverlay();
+    roomEls.overlay.classList.add('open');
+  });
+  roomEls.goalSaveBtn.addEventListener('click', () => roomRun(roomEls.goalSaveBtn, 'Saving…', async () => {
+    const { error } = await supabaseClient.rpc('set_room_target', { p_code: room.code, p_hours: room.goalMin / 60 });
     if (error) throw error;
-    await roomFetch();
-    roomEls.message.textContent = 'Target saved for everyone in the room.';
+    roomEls.overlay.classList.remove('open');
+    roomFetch();
   }));
 
-  roomEls.leaveBtn.addEventListener('click', () => roomRun(roomEls.leaveBtn, 'Leaving…', async () => {
+  roomEls.leaveBtn.addEventListener('click', async () => {
+    if (!confirm('Leave this room? Your study time stays in your own StackTime progress.')) return;
+    roomEls.leaveBtn.disabled = true;
     const { error } = await supabaseClient.rpc('leave_all_rooms');
-    if (error) throw error;
-    roomForget('');
-  }));
+    roomEls.leaveBtn.disabled = false;
+    if (error) { roomSys(roomError(error)); return; }
+    roomForget();
+    updateDisplay();
+  });
 
-  roomEls.copyBtn.addEventListener('click', async () => {
+  roomEls.codeBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(room.code);
-      roomEls.copyBtn.textContent = 'Copied!';
-    } catch (e) { roomEls.copyBtn.textContent = 'Select the code to copy'; }
-    setTimeout(() => { roomEls.copyBtn.textContent = 'Copy code'; }, 1500);
+      roomEls.codeHint.textContent = 'Copied!';
+    } catch (e) { roomEls.codeHint.textContent = 'Copy failed'; }
+    setTimeout(() => { roomEls.codeHint.textContent = 'Copy'; }, 1500);
+  });
+  roomEls.notifyBtn.addEventListener('click', roomAskNotify);
+
+  // The room's own timer buttons drive the normal StackTime session timer
+  roomEls.startBtn.addEventListener('click', () => {
+    if (!anyTimerRunning() && state.mode !== 'session') setMode('session');
+    startBtn.click();
+    roomTick();
+  });
+  roomEls.pauseBtn.addEventListener('click', () => { pauseBtn.click(); roomTick(); });
+
+  ROOM_CHEERS.forEach(cheer => {
+    const b = roomNode('button', 'rv-cheer', cheer.emoji + ' ' + cheer.text);
+    b.type = 'button';
+    b.addEventListener('click', () => {
+      if (b.disabled) return;
+      b.disabled = true;
+      setTimeout(() => { b.disabled = false; }, 1500);
+      roomSend('cheer', cheer.emoji + ' ' + cheer.text);
+    });
+    roomEls.cheers.append(b);
+  });
+  roomEls.chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = roomEls.chatInput.value.trim();
+    if (!text) return;
+    roomEls.chatInput.value = '';
+    roomSend('text', text.slice(0, 300));
   });
 
   function setupPointerInteractions() {
