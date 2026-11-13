@@ -2163,6 +2163,25 @@
   authTopCloseBtn.addEventListener('click', closeAuthOverlay);
   authVerificationCloseBtn.addEventListener('click', closeAuthOverlay);
 
+  // Supabase's own wording ("email rate limit exceeded", "Invalid login credentials") is terse; say what to do instead
+  function friendlyAuthError(error) {
+    const code = String((error && error.code) || '');
+    const text = String((error && error.message) || error || '');
+    // Checked first: the per-address cooldown shares its error code with the project-wide email limit
+    const wait = text.match(/after (\d+) seconds/i);
+    if (wait) return 'We just sent an email to this address. Please wait ' + wait[1] + ' seconds before trying again.';
+    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(text)) {
+      return 'Lots of people are signing up right now, so we could not send your confirmation email. Please try again in a few minutes, or continue with Google.';
+    }
+    if (code === 'over_request_rate_limit' || (error && error.status === 429)) return 'Too many attempts. Please wait a minute and try again.';
+    if (code === 'invalid_credentials' || /invalid login credentials/i.test(text)) return 'That email and password do not match. Check them, or create an account if you are new.';
+    if (code === 'email_not_confirmed' || /email not confirmed/i.test(text)) return 'Please confirm your email first: open the link we sent you, then sign in.';
+    if (code === 'user_already_exists' || /already registered/i.test(text)) return 'An account with this email already exists. Sign in instead.';
+    if (code === 'weak_password') return 'Please choose a stronger password (at least 6 characters).';
+    if (/fetch|network/i.test(text)) return 'Could not reach the server. Check your connection and try again.';
+    return text || 'Something went wrong. Please try again.';
+  }
+
   authForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!supabaseClient) return;
@@ -2175,7 +2194,7 @@
       : await supabaseClient.auth.signInWithPassword({ email, password });
     authSubmitBtn.disabled = false;
     if (result.error) {
-      authMessage.textContent = result.error.message;
+      authMessage.textContent = friendlyAuthError(result.error);
       return;
     }
     if (authMode === 'signup' && !result.data.session) {
@@ -2197,7 +2216,7 @@
       provider: 'google',
       options: { redirectTo: window.location.origin + window.location.pathname }
     });
-    if (error) authMessage.textContent = error.message;
+    if (error) authMessage.textContent = friendlyAuthError(error);
   });
 
   cloudPrimaryBtn.addEventListener('click', () => cloudChoiceActions.primary && cloudChoiceActions.primary());
