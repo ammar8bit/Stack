@@ -40,6 +40,8 @@
       "package.json"
     ],
     "asar": true,
+    "compression": "maximum",
+    "electronLanguages": ["en-US"],
     "publish": null,
     "protocols": [
       {
