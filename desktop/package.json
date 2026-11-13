@@ -1,0 +1,75 @@
+{
+  "name": "stacktime-desktop",
+  "productName": "StackTime",
+  "version": "1.0.0",
+  "description": "StackTime study timer for Windows",
+  "author": "Ammar Khalil Muneer",
+  "homepage": "https://stacktime.me/",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "prepare:site": "node scripts/prepare-site.js && electron scripts/make-icon.js",
+    "dev": "npm run prepare:site && electron .",
+    "build": "npm run prepare:site && electron-builder --win --dir",
+    "dist": "npm run prepare:site && electron-builder --win nsis"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  },
+  "devDependencies": {
+    "@fontsource/anton": "^5.0.0",
+    "@fontsource/inter": "^5.0.0",
+    "@supabase/supabase-js": "^2.0.0",
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0",
+    "motion": "13.1.1"
+  },
+  "build": {
+    "appId": "me.stacktime.desktop",
+    "productName": "StackTime",
+    "copyright": "Copyright © 2026 Ammar Khalil Muneer",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "site/**/*",
+      "build/icon.ico",
+      "package.json"
+    ],
+    "asar": true,
+    "publish": null,
+    "protocols": [
+      {
+        "name": "StackTime",
+        "schemes": [
+          "stacktime"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "StackTime",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "StackTime-Setup-${version}.${ext}"
+    }
+  }
+}

@@ -891,6 +891,11 @@
     }
   } catch (e) { deviceId = 'device-' + Math.random().toString(36).slice(2); }
 
+  // Desktop app (Electron) only: window.stacktimeDesktop does not exist in a browser, so there
+  // desktopHooks stays null and every `if (desktopHooks)` below is skipped.
+  const desktopHost = window.stacktimeDesktop || null;
+  let desktopHooks = null;
+
   // A running timer whose page has not been heard from for this long is treated as abandoned:
   // time is credited only up to the last heartbeat and the timer is paused (never runs for days).
   const STALE_MS = 3 * 60 * 60 * 1000;
@@ -1052,7 +1057,9 @@
 
   try {
     if (window.supabase && window.supabase.createClient) {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+      supabaseClient = desktopHost
+        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { flowType: 'pkce', detectSessionInUrl: false } })
+        : window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     }
   } catch (e) { console.warn('Cloud backup is unavailable', e); }
 
@@ -1520,6 +1527,7 @@
 
   async function saveCloudProgress(quiet) {
     if (!supabaseClient || !cloudUser || !cloudSyncEnabled) return;
+    if (desktopHooks && desktopHooks.interceptSave()) return;
     if (!state.savedAt) { state.savedAt = Date.now(); state.writer = deviceId; persistLocal(); }
     if (!quiet) updateAccountUI('Saving to cloud…');
     const { error } = await supabaseClient.from('user_progress').upsert({
@@ -1530,8 +1538,10 @@
     if (error) {
       console.error('Cloud save failed', error);
       updateAccountUI('Cloud save failed — your progress is still stored locally');
+      if (desktopHooks) desktopHooks.cloudSaved(false);
       return;
     }
+    if (desktopHooks) desktopHooks.cloudSaved(true);
     if (!quiet) updateAccountUI('Saved to cloud');
   }
 
@@ -1552,6 +1562,7 @@
     try {
       const rec = await getCloudProgress();
       const remote = rec && rec.data;
+      if (desktopHooks && desktopHooks.holdRemote(remote)) return;
       if (remote && Number(remote.savedAt) > (state.savedAt || 0)) {
         applyStateData(remote, true);
         updateAccountUI('Synced from another device');
@@ -1614,6 +1625,7 @@
       // Reloading while signed in is safe to auto-load. But never silently overwrite a timer that is
       // running here unless this same device wrote the cloud copy; otherwise ask via the popup below.
       const cloudIsOurs = hasCloudProgress && cloudRecord.data.writer === deviceId;
+      if (desktopHooks && sameAccountAsBefore && cloudSyncEnabled && desktopHooks.holdRemote(hasCloudProgress ? cloudRecord.data : null)) return;
       if (sameAccountAsBefore && cloudSyncEnabled && (!anyTimerRunning() || cloudIsOurs || !hasCloudProgress)) {
         if (hasCloudProgress && Number(cloudRecord.data.savedAt || 0) >= (state.savedAt || 0)) applyCloudProgress(cloudRecord.data);
         else await uploadLocalProgress();
@@ -1718,7 +1730,9 @@
       document.title = showAlertTitle ? defaultDocumentTitle : 'Time is up — StackTime';
       showAlertTitle = !showAlertTitle;
     }, 900);
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if (desktopHooks) {
+      desktopHooks.notify('StackTime timer finished', 'Your countdown has reached zero.');
+    } else if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('StackTime timer finished', { body: 'Your countdown has reached zero.' });
     }
     saveState();
@@ -1763,6 +1777,7 @@
 
   function persistLocal() {
     try { localStorage.setItem('stackTimerState', JSON.stringify(buildPayload())); } catch (e) {}
+    if (desktopHooks) desktopHooks.changed();
   }
 
   // heartbeat=true: only prove this page is alive (local, plus a throttled cloud ping if we own the
@@ -1858,6 +1873,7 @@
     persistLocal();
     refreshRunUI();
     updateDisplay();
+    if (fromCloud && desktopHooks) desktopHooks.cloudApplied();
   }
 
   function loadState() {
@@ -2154,7 +2170,7 @@
     authSubmitBtn.disabled = true;
     authMessage.textContent = authMode === 'signup' ? 'Creating your account…' : 'Signing you in…';
     const result = authMode === 'signup'
-      ? await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + window.location.pathname } })
+      ? await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: desktopHooks ? desktopHooks.emailRedirect : window.location.origin + window.location.pathname } })
       : await supabaseClient.auth.signInWithPassword({ email, password });
     authSubmitBtn.disabled = false;
     if (result.error) {
@@ -2175,6 +2191,7 @@
   googleAuthBtn.addEventListener('click', async () => {
     if (!supabaseClient) return;
     authMessage.textContent = 'Opening Google sign-in…';
+    if (desktopHooks) { authMessage.textContent = await desktopHooks.oauth('google'); return; }
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin + window.location.pathname }
@@ -2933,6 +2950,7 @@
   function roomNotify(title, body) {
     if (roomNotifyState() !== 'granted') return;
     if (!document.hidden && (!document.hasFocus || document.hasFocus())) return;
+    if (desktopHooks) { desktopHooks.notify(title, String(body || '').slice(0, 140)); return; }
     const opts = { body: String(body || '').slice(0, 140), icon: 'assets/logo-192.png', badge: 'assets/logo-192.png', tag: 'stacktime-room', renotify: true };
     const direct = () => {
       try {
@@ -3336,6 +3354,14 @@
   }
 
   [setupDeadline, goalSettingsDeadline, settingsDeadline].forEach(input => { input.min = getTodayStr(); });
+  if (desktopHost && window.stacktimeDesktopAttach) {
+    desktopHooks = window.stacktimeDesktopAttach({
+      deviceId, supabase: supabaseClient, getState: () => state, getRoomCode: () => room.code,
+      getTodayStr, buildPayload, getDailyGoalHours, anyTimerRunning, formatHoursMinutes,
+      applyStateData, saveState, syncCloud, updateAccountUI, showCloudChoice, closeCloudChoice,
+      reconcileStale, refreshRunUI, updateDisplay, finishCountdown, roomResync, roomSys, roomSend
+    });
+  }
   loadState();
   setupPointerInteractions();
   if (state.firstTime) {

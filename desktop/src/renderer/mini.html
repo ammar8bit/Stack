@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StackTime mini view</title>
+<link href="../vendor/fonts.css" rel="stylesheet">
+<style>
+  /* Colours and fonts mirror the :root tokens in the site's index.html */
+  :root { --bg:rgba(26,10,10,0.94); --accent:#ff4d4d; --accent-glow:rgba(255,77,77,0.35); --text:#f5e6e6;
+    --text-dim:#c9a0a0; --border:rgba(255,77,77,0.3); --green:#4ade80; --orange:#fb923c; }
+  [data-theme="light"] { --bg:rgba(245,239,230,0.96); --accent:#b83b3b; --accent-glow:rgba(184,59,59,0.25);
+    --text:#3d1f1f; --text-dim:#7a5555; --border:rgba(184,59,59,0.35); --green:#16a34a; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:transparent; overflow:hidden; user-select:none; }
+  body { font-family:'Inter',sans-serif; color:var(--text); padding:4px; }
+  .card { height:100%; display:flex; align-items:center; gap:12px; padding:0 14px 0 18px; background:var(--bg);
+    border:1px solid var(--border); border-radius:18px; -webkit-app-region:drag; position:relative; }
+  .info { flex:1; min-width:0; }
+  .label { font-size:10px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-dim);
+    display:flex; align-items:center; gap:6px; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--text-dim); opacity:0.5; }
+  .running .dot { background:var(--green); opacity:1; }
+  .paused .dot { background:var(--orange); opacity:1; }
+  .time { font-family:'Anton',sans-serif; font-size:34px; line-height:1.15; letter-spacing:0.04em;
+    font-variant-numeric:tabular-nums; }
+  .running .time { color:var(--accent); text-shadow:0 0 18px var(--accent-glow); }
+  .finished .time { color:var(--orange); }
+  .sub { font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  button { -webkit-app-region:no-drag; font-family:inherit; cursor:pointer; border:none; outline:none; }
+  .play { width:46px; height:46px; flex:none; border-radius:50%; background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 0 16px var(--accent-glow); transition:transform 0.15s; }
+  .play:hover { transform:scale(1.07); }
+  .play:focus-visible, .corner button:focus-visible { box-shadow:0 0 0 2px var(--text); }
+  .play svg { width:18px; height:18px; fill:currentColor; }
+  .corner { position:absolute; top:5px; right:8px; display:flex; gap:2px; opacity:0; transition:opacity 0.15s; }
+  .card:hover .corner, .corner:focus-within { opacity:1; }
+  .corner button { width:18px; height:18px; border-radius:6px; background:transparent; color:var(--text-dim);
+    font-size:13px; line-height:1; }
+  .corner button:hover { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="card idle" id="card">
+  <div class="info">
+    <div class="label"><span class="dot"></span><span id="label">Session</span></div>
+    <div class="time" id="time">00:00:00</div>
+    <div class="sub" id="sub">&nbsp;</div>
+  </div>
+  <button class="play" id="play" type="button" title="Start" aria-label="Start"></button>
+  <div class="corner">
+    <button id="open" type="button" title="Open StackTime" aria-label="Open StackTime">&#x2197;</button>
+    <button id="hide" type="button" title="Hide mini view" aria-label="Hide mini view">&times;</button>
+  </div>
+</div>
+<script src="mini.js"></script>
+</body>
+</html>

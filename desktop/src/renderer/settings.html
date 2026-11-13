@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StackTime — Desktop settings</title>
+<link href="../vendor/fonts.css" rel="stylesheet">
+<style>
+  :root { --bg:#1a0a0a; --bg-card:rgba(60,15,15,0.6); --accent:#ff4d4d; --text:#f5e6e6; --text-dim:#c9a0a0;
+    --border:rgba(255,77,77,0.25); --green:#4ade80; --orange:#fb923c; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); padding:1.6rem 1.5rem; font-size:0.85rem; }
+  h1 { font-family:'Anton',sans-serif; font-weight:400; font-size:1.6rem; letter-spacing:0.05em; }
+  .lead { color:var(--text-dim); font-size:0.78rem; margin:0.3rem 0 1.3rem; line-height:1.5; }
+  h2 { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-dim); margin-bottom:0.6rem; font-weight:600; }
+  .card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:0.4rem 1rem; margin-bottom:1.2rem; }
+  .row { padding:0.75rem 0; border-bottom:1px solid var(--border); }
+  .row:last-child { border-bottom:none; }
+  .row-top { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; }
+  .name { font-weight:500; }
+  .keys { display:flex; align-items:center; gap:0.4rem; }
+  button { font-family:inherit; cursor:pointer; color:var(--text); background:transparent; border:1px solid var(--border);
+    border-radius:8px; padding:0.35rem 0.7rem; font-size:0.78rem; transition:border-color 0.15s, color 0.15s; }
+  button:hover, button:focus-visible { border-color:var(--accent); color:var(--accent); outline:none; }
+  .combo { min-width:128px; font-weight:600; letter-spacing:0.02em; }
+  .combo.recording { border-color:var(--accent); color:var(--accent); }
+  .link { border:none; padding:0.35rem 0.3rem; color:var(--text-dim); font-size:0.72rem; }
+  .note { font-size:0.72rem; margin-top:0.35rem; min-height:1em; color:var(--text-dim); }
+  .note.bad { color:var(--orange); }
+  .note.good { color:var(--green); }
+  label.check { display:flex; align-items:center; justify-content:space-between; gap:1rem; cursor:pointer; }
+  input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent); cursor:pointer; }
+  footer { color:var(--text-dim); font-size:0.7rem; text-align:center; }
+</style>
+</head>
+<body>
+<h1>Desktop settings</h1>
+<p class="lead">Hotkeys work anywhere in Windows, even while StackTime is hidden in the tray.</p>
+<h2>Global hotkeys</h2>
+<div class="card" id="hotkeys"></div>
+<h2>Startup</h2>
+<div class="card">
+  <div class="row">
+    <label class="check"><span class="name">Launch StackTime when Windows starts</span><input type="checkbox" id="startup"></label>
+    <div class="note" id="startupNote">Starts quietly in the tray.</div>
+  </div>
+</div>
+<footer id="version"></footer>
+<script src="settings.js"></script>
+</body>
+</html>
