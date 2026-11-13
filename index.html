@@ -228,8 +228,36 @@
   .donate-row { margin-top:0.5rem; display:flex; flex-direction:column; gap:0.4rem; }
   .donate-row span { font-size:0.72rem; color:var(--text-dim); text-decoration:none; padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:6px; text-align:center; opacity:0.7; transition:all 0.2s; cursor:default; }
   .donate-row span:hover { opacity:1; border-color:var(--accent); color:var(--accent); }
+  .room-widget { position:fixed; top:4.2rem; right:1.5rem; z-index:10; width:260px; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:0.9rem 1rem; backdrop-filter:blur(14px); box-shadow:var(--shadow); }
+  .room-head { display:flex; justify-content:space-between; align-items:center; gap:0.5rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:0.6rem; }
+  .room-head button { font-size:0.68rem; padding:0.2rem 0.5rem; }
+  .room-code-chip { color:var(--text); font-family:monospace; font-weight:700; letter-spacing:0.18em; }
+  .room-members { display:flex; flex-direction:column; gap:0.65rem; }
+  .room-member-top { display:flex; justify-content:space-between; align-items:baseline; gap:0.5rem; }
+  .room-name { font-size:0.82rem; color:var(--text); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .room-time { font-family:var(--font-timer); font-size:1.25rem; letter-spacing:0.05em; color:var(--text); font-variant-numeric:tabular-nums; }
+  .room-status { display:flex; align-items:center; gap:0.35rem; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-top:0.1rem; }
+  .room-dot { width:7px; height:7px; border-radius:50%; background:var(--text-dim); opacity:0.6; flex:none; }
+  .room-member.studying .room-dot { background:var(--green); opacity:1; box-shadow:0 0 8px var(--green-glow); animation:roomPulse 1.6s ease-in-out infinite; }
+  .room-member.studying .room-time { text-shadow:0 0 18px var(--green-glow); }
+  .room-member.paused .room-dot { background:var(--orange); opacity:1; }
+  .room-member.paused .room-status { color:var(--orange); }
+  .room-member.offline { opacity:0.55; }
+  .room-bar { height:4px; background:var(--progress-track); border-radius:2px; overflow:hidden; margin-top:0.35rem; }
+  .room-bar > div { height:100%; width:0; background:var(--accent); border-radius:2px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); }
+  .room-member.done .room-bar > div { background:var(--green); }
+  .room-note { font-size:0.68rem; color:var(--text-dim); margin-top:0.6rem; text-align:center; line-height:1.4; }
+  @keyframes roomPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.35); } }
+  .room-field { display:flex; flex-direction:column; gap:0.35rem; text-align:left; margin-bottom:0.85rem; }
+  .room-field label { font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; }
+  .room-field input { width:100%; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--text); padding:0.65rem 0.8rem; font-family:var(--font-body); font-size:0.9rem; outline:none; }
+  .room-field input:focus { border-color:var(--accent); }
+  .room-big-code { font-family:monospace; font-size:2.1rem; font-weight:700; letter-spacing:0.3em; color:var(--text); text-align:center; margin:0.4rem 0 0.2rem; padding-left:0.3em; user-select:all; }
+  .room-row { display:flex; gap:0.5rem; align-items:center; }
   .hidden { display:none !important; }
   @media (max-width:600px) {
+    .room-widget { top:auto; right:auto; bottom:1rem; left:1rem; width:calc(100vw - 5.2rem); max-width:260px; padding:0.7rem 0.8rem; }
+    .room-time { font-size:1.05rem; }
     .container { padding:1.2rem 1rem; gap:1.3rem; }
     .daily-goal-widget { width:150px; padding:0.7rem; top:1rem; left:1rem; }
     .daily-goal-header span:first-child { font-size:0.62rem; }
@@ -428,6 +456,59 @@
   </div>
 </div>
 
+<div class="room-widget hidden" id="roomWidget" aria-live="off">
+  <div class="room-head">
+    <span>Room <span class="room-code-chip" id="roomWidgetCode"></span></span>
+    <button class="btn-small" id="roomManageBtn" type="button">Manage</button>
+  </div>
+  <div class="room-members" id="roomMembers"></div>
+  <div class="room-note" id="roomNote"></div>
+</div>
+
+<div class="welcome-overlay" id="roomOverlay" role="dialog" aria-modal="true" aria-labelledby="roomTitle">
+  <div class="welcome-card" style="max-width:420px;">
+    <button class="modal-close" id="roomCloseBtn" type="button" aria-label="Close">×</button>
+    <h1 id="roomTitle" style="font-size:1.7rem;">Study Together</h1>
+    <p class="tagline" id="roomSubtitle">Up to 5 people. See each other's study time live.</p>
+
+    <div id="roomStepStart">
+      <div class="room-field">
+        <label for="roomName">Your name</label>
+        <input id="roomName" type="text" maxlength="24" placeholder="e.g. Ammar" autocomplete="nickname">
+      </div>
+      <div class="room-field">
+        <label for="roomTargetNew">Shared target (hours, optional)</label>
+        <input id="roomTargetNew" type="number" min="0" max="100" step="0.5" placeholder="e.g. 4">
+      </div>
+      <button class="btn btn-main" id="roomCreateBtn" type="button" style="width:100%;">Create a room</button>
+      <div class="auth-divider"><span>or join a friend</span></div>
+      <div class="room-field">
+        <label for="roomCodeInput">Room code</label>
+        <input id="roomCodeInput" type="text" maxlength="6" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase; letter-spacing:0.25em; font-family:monospace; text-align:center;">
+      </div>
+      <button class="btn btn-ghost" id="roomJoinBtn" type="button" style="width:100%;">Join room</button>
+    </div>
+
+    <div id="roomStepIn" class="hidden">
+      <p class="tagline" style="margin-bottom:0.2rem;">Share this code with your friends</p>
+      <div class="room-big-code" id="roomBigCode"></div>
+      <div class="room-row" style="justify-content:center; margin:0.5rem 0 1.2rem;">
+        <button class="btn-small" id="roomCopyBtn" type="button">Copy code</button>
+      </div>
+      <div class="room-field">
+        <label for="roomTargetEdit">Shared target (hours)</label>
+        <div class="room-row">
+          <input id="roomTargetEdit" type="number" min="0" max="100" step="0.5" placeholder="0 = no target">
+          <button class="btn-small" id="roomTargetSaveBtn" type="button">Save</button>
+        </div>
+      </div>
+      <button class="btn btn-ghost" id="roomLeaveBtn" type="button" style="width:100%;">Leave room</button>
+    </div>
+
+    <p class="auth-message" id="roomMessage" style="margin-top:0.9rem;"></p>
+  </div>
+</div>
+
 <div class="daily-goal-widget" id="dailyGoalWidget">
   <div class="daily-goal-header">
     <span id="dailyGoalTitle">Today's Goal</span>
@@ -508,6 +589,10 @@
     <button class="btn-small" id="accountBtn">Create / Sign in</button>
   </div>
   <div class="cloud-status" id="cloudStatus">Local only — progress stays on this device</div>
+  <div class="setting-row">
+    <span class="setting-label">Study Together</span>
+    <button class="btn-small" id="roomOpenBtn">Rooms</button>
+  </div>
   <div class="setting-row goal-setting-row" id="goalManageRow">
     <span class="setting-label">Goal &amp; deadline</span>
     <button class="btn-small" id="goalManageBtn">Change</button>
@@ -679,7 +764,7 @@
     sessionRunning: false, sessionStartTime: 0, sessionElapsed: 0,
     questionRunning: false, questionStartTime: 0, questionElapsed: 0,
     countdownRunning: false, countdownStartTime: 0, countdownInitialMs: 600000, countdownFinished: false,
-    paused: false, pauseStart: 0,
+    paused: false, pauseStart: 0, frozen: null,
     totalMs: 0, todayMs: 0, lastStudyDate: null,
     goalHours: 0, goalDeadline: '', hasGoal: false,
     goalHitAcked: false, deadlineHitAcked: false,
@@ -809,6 +894,40 @@
   const enableCloudBtn = document.getElementById('enableCloudBtn');
   const accountSignOutBtn = document.getElementById('accountSignOutBtn');
 
+  // Study Together (multiplayer) - state lives up here because saveState() can run during startup
+  const ROOM_POLL_MS = 10000;
+  const ROOM_HEARTBEAT_MS = 25000;
+  const ROOM_STALE_MS = 150000;
+  const room = {
+    code: '', members: [], rows: [], target: 0, skew: 0,
+    channel: null, pollTimer: null, tickTimer: null, pushTimer: null, fetchTimer: null,
+    lastPush: 0, fetching: false, refetch: false
+  };
+  const roomEls = {
+    widget: document.getElementById('roomWidget'),
+    widgetCode: document.getElementById('roomWidgetCode'),
+    manageBtn: document.getElementById('roomManageBtn'),
+    members: document.getElementById('roomMembers'),
+    note: document.getElementById('roomNote'),
+    overlay: document.getElementById('roomOverlay'),
+    closeBtn: document.getElementById('roomCloseBtn'),
+    openBtn: document.getElementById('roomOpenBtn'),
+    subtitle: document.getElementById('roomSubtitle'),
+    stepStart: document.getElementById('roomStepStart'),
+    stepIn: document.getElementById('roomStepIn'),
+    name: document.getElementById('roomName'),
+    targetNew: document.getElementById('roomTargetNew'),
+    createBtn: document.getElementById('roomCreateBtn'),
+    codeInput: document.getElementById('roomCodeInput'),
+    joinBtn: document.getElementById('roomJoinBtn'),
+    bigCode: document.getElementById('roomBigCode'),
+    copyBtn: document.getElementById('roomCopyBtn'),
+    targetEdit: document.getElementById('roomTargetEdit'),
+    targetSaveBtn: document.getElementById('roomTargetSaveBtn'),
+    leaveBtn: document.getElementById('roomLeaveBtn'),
+    message: document.getElementById('roomMessage')
+  };
+
   const SUPABASE_URL = 'https://arvozknuyfqodotxgytt.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_N6TFSkBsQpyhDR-KAf5k9w_J24-VWLe';
   let supabaseClient = null;
@@ -868,8 +987,53 @@
   }
   // Reference "now" for running timers: frozen at the pause moment while paused
   function clockNow() { return state.paused && state.pauseStart ? state.pauseStart : Date.now(); }
+
+  // While paused, the exact values on screen are frozen into state.frozen (and saved with it), so a
+  // paused timer shows the same number after minimising, reloading or syncing - it is never re-derived
+  // from timestamps. Resuming rebuilds the start times from these frozen numbers.
+  function computeFrozen(at) {
+    return {
+      session: state.sessionRunning ? state.sessionElapsed + (at - state.sessionStartTime) : null,
+      question: state.questionRunning ? state.questionElapsed + (at - state.questionStartTime) : null,
+      countdown: state.countdownRunning ? Math.max(0, state.countdownInitialMs - (at - state.countdownStartTime)) : null
+    };
+  }
+  function sanitizeFrozen(f) {
+    if (!f || typeof f !== 'object') return null;
+    const num = v => (v === null || v === undefined || !isFinite(Number(v)) || Number(v) < 0) ? null : Number(v);
+    return { session: num(f.session), question: num(f.question), countdown: num(f.countdown) };
+  }
+  function frozenValue(key, running) {
+    return state.paused && running && state.frozen && state.frozen[key] !== null && state.frozen[key] !== undefined
+      ? state.frozen[key] : null;
+  }
+  function unfreezeTimers(now) {
+    const f = state.frozen;
+    const base = (key, running, elapsed, start) => {
+      const fv = f && f[key] !== null && f[key] !== undefined ? f[key] : null;
+      return fv !== null ? now - (fv - elapsed) : start + (now - (state.pauseStart || now));
+    };
+    if (state.sessionRunning) state.sessionStartTime = base('session', true, state.sessionElapsed, state.sessionStartTime);
+    if (state.questionRunning) state.questionStartTime = base('question', true, state.questionElapsed, state.questionStartTime);
+    if (state.countdownRunning) {
+      const fv = f && f.countdown !== null && f.countdown !== undefined ? f.countdown : null;
+      state.countdownStartTime = fv !== null
+        ? now - (state.countdownInitialMs - fv)
+        : state.countdownStartTime + (now - (state.pauseStart || now));
+    }
+    state.paused = false;
+    state.pauseStart = 0;
+    state.frozen = null;
+  }
+
   function liveSessionMs() {
+    const fv = frozenValue('session', state.sessionRunning);
+    if (fv !== null) return fv;
     return state.sessionRunning ? state.sessionElapsed + (clockNow() - state.sessionStartTime) : state.sessionElapsed;
+  }
+  // Everything studied today, including the session in progress (shared in multiplayer rooms)
+  function liveTodayMs() {
+    return state.todayMs + (state.sessionRunning ? liveSessionMs() : 0);
   }
   function liveTotalMs() { return state.totalMs + (state.sessionRunning ? liveSessionMs() : 0); }
   function rolloverDay() {
@@ -1050,11 +1214,16 @@
     rolloverDay();
     const now = clockNow();
     const sessionMs = liveSessionMs();
-    const questionMs = state.questionRunning
-      ? state.questionElapsed + (now - state.questionStartTime)
-      : state.questionElapsed;
+    const frozenQuestion = frozenValue('question', state.questionRunning);
+    const questionMs = frozenQuestion !== null ? frozenQuestion
+      : state.questionRunning
+        ? state.questionElapsed + (now - state.questionStartTime)
+        : state.questionElapsed;
     let countdownMs = 0;
-    if (state.countdownRunning) {
+    const frozenCountdown = frozenValue('countdown', state.countdownRunning);
+    if (frozenCountdown !== null) {
+      countdownMs = frozenCountdown;
+    } else if (state.countdownRunning) {
       countdownMs = Math.max(0, state.countdownInitialMs - (now - state.countdownStartTime));
     } else if (state.mode === 'countdown') {
       countdownMs = state.countdownFinished ? 0 : state.countdownInitialMs;
@@ -1118,22 +1287,19 @@
   function pauseAll() {
     if (!state.sessionRunning && !state.questionRunning && !state.countdownRunning) return;
     if (state.paused) return;
+    const now = Date.now();
+    state.frozen = computeFrozen(now);
     state.paused = true;
-    state.pauseStart = Date.now();
+    state.pauseStart = now;
     startBtn.textContent = 'Resume';
     pauseBtn.classList.add('hidden');
     cancelAnimationFrame(rafId);
+    updateDisplay();
   }
 
   function resumeAll() {
     if (!state.paused) return;
-    const now = Date.now();
-    const pauseDuration = now - state.pauseStart;
-    state.paused = false;
-    state.pauseStart = 0;
-    if (state.sessionRunning) state.sessionStartTime += pauseDuration;
-    if (state.questionRunning) state.questionStartTime += pauseDuration;
-    if (state.countdownRunning) state.countdownStartTime += pauseDuration;
+    unfreezeTimers(Date.now());
     startBtn.textContent = 'Stop';
     pauseBtn.classList.remove('hidden');
     startLoop();
@@ -1223,6 +1389,7 @@
       countdownStartTime: state.countdownStartTime,
       paused: state.paused,
       pauseStart: state.pauseStart,
+      frozen: state.frozen,
       lastActive: state.lastActive || Date.now()
     });
     applyStateData(merged, true);
@@ -1474,6 +1641,7 @@
       countdownStartTime: state.countdownStartTime,
       paused: state.paused,
       pauseStart: state.pauseStart,
+      frozen: state.frozen,
       lastActive: state.lastActive,
       savedAt: state.savedAt,
       writer: state.writer
@@ -1495,6 +1663,7 @@
       state.writer = deviceId;
     }
     persistLocal();
+    if (!heartbeat) roomQueuePush(); else roomHeartbeat();
     if (!heartbeat) {
       queueCloudSave();
     } else if (cloudUser && cloudSyncEnabled && anyTimerRunning() && state.writer === deviceId
@@ -1508,8 +1677,9 @@
   function reconcileStale() {
     if (!anyTimerRunning() || state.paused || !state.lastActive) return false;
     if (Date.now() - state.lastActive <= STALE_MS) return false;
-    state.paused = true;
     state.pauseStart = state.lastActive;
+    state.frozen = computeFrozen(state.pauseStart);
+    state.paused = true;
     saveState();
     return true;
   }
@@ -1551,6 +1721,9 @@
     state.countdownFinished = Boolean(data.countdownFinished);
     state.paused = Boolean(data.paused);
     state.pauseStart = Number(data.pauseStart) || 0;
+    if (state.paused && !state.pauseStart) state.pauseStart = Number(data.lastActive) || Date.now();
+    // Older saves have no frozen values: derive them once from the pause moment, then they are stored
+    state.frozen = state.paused ? (sanitizeFrozen(data.frozen) || computeFrozen(state.pauseStart)) : null;
     state.lastActive = Number(data.lastActive) || 0;
     state.savedAt = Number(data.savedAt) || 0;
     state.writer = data.writer || '';
@@ -1633,13 +1806,7 @@
 
   function setMode(mode) {
     const now = Date.now();
-    if (state.paused) {
-      const pauseDuration = now - state.pauseStart;
-      if (state.sessionRunning) state.sessionStartTime += pauseDuration;
-      if (state.questionRunning) state.questionStartTime += pauseDuration;
-      if (state.countdownRunning) state.countdownStartTime += pauseDuration;
-      state.pauseStart = now;
-    }
+    // Switching modes while paused keeps the frozen numbers as they are; nothing to shift.
     if (mode !== 'question' && state.questionRunning) {
       stopQuestion(now);
     }
@@ -1772,14 +1939,7 @@
 
   resetBtn.addEventListener('click', () => {
     const now = Date.now();
-    if (state.paused) {
-      const pauseDuration = now - state.pauseStart;
-      if (state.sessionRunning) state.sessionStartTime += pauseDuration;
-      if (state.questionRunning) state.questionStartTime += pauseDuration;
-      if (state.countdownRunning) state.countdownStartTime += pauseDuration;
-      state.paused = false;
-      state.pauseStart = 0;
-    }
+    if (state.paused) unfreezeTimers(now);
     if (state.mode === 'session') {
       if (state.sessionRunning) {
         stopSession(now);
@@ -1843,6 +2003,7 @@
       return;
     }
     cloudUser = null;
+    roomStop();
     setCloudSyncEnabled(false);
     localStorage.removeItem('stackCloudUserId');
     accountOverlay.classList.remove('open');
@@ -2101,6 +2262,7 @@
     state.sessionElapsed = 0;
     if (state.sessionRunning) {
       state.sessionStartTime = clockNow();
+      if (state.frozen) state.frozen.session = 0;
     }
     state.goalHitAcked = false;
     state.deadlineHitAcked = false;
@@ -2123,6 +2285,8 @@
       state.countdownRunning = false;
       state.countdownFinished = false;
       state.paused = false;
+      state.pauseStart = 0;
+      state.frozen = null;
       state.goalHitAcked = false;
       state.deadlineHitAcked = false;
       cancelAnimationFrame(rafId);
@@ -2186,12 +2350,305 @@
       return;
     }
     if (reconcileStale()) refreshRunUI();
+    // Coming back from minimised: repaint from state right away (never leave a stale/blank frame)
+    refreshRunUI();
     updateDisplay();
     syncCloud(false);
+    roomResync();
   });
 
   window.addEventListener('pagehide', () => {
     if (anyTimerRunning()) saveState({ heartbeat: true });
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // Study Together: rooms of up to 5 people. Each member publishes {status, today's ms} and every
+  // browser adds the elapsed time itself while a friend is 'studying', so counters tick live without
+  // anyone writing every second. Needs supabase-multiplayer.sql to have been run.
+  // ---------------------------------------------------------------------------------------------
+  function roomStore(key, value) {
+    try {
+      if (value === undefined) return localStorage.getItem(key) || '';
+      if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+    } catch (e) {}
+    return '';
+  }
+
+  function roomMyStatus() {
+    return state.sessionRunning ? (state.paused ? 'paused' : 'studying') : 'idle';
+  }
+
+  async function roomPushNow() {
+    if (!room.code || !supabaseClient || !cloudUser) return;
+    room.lastPush = Date.now();
+    const { error } = await supabaseClient.from('room_members')
+      .update({ status: roomMyStatus(), elapsed_ms: Math.max(0, Math.floor(liveTodayMs())) })
+      .eq('room_code', room.code).eq('user_id', cloudUser.id);
+    if (error) console.warn('Room update failed', error);
+  }
+  function roomQueuePush() {
+    if (!room.code) return;
+    clearTimeout(room.pushTimer);
+    room.pushTimer = setTimeout(roomPushNow, 250);
+  }
+  function roomHeartbeat() {
+    if (room.code && Date.now() - room.lastPush > ROOM_HEARTBEAT_MS) roomPushNow();
+  }
+
+  async function roomFetch() {
+    if (!room.code || !supabaseClient || !cloudUser) return;
+    if (room.fetching) { room.refetch = true; return; }
+    room.fetching = true;
+    try {
+      const t0 = Date.now();
+      const { data, error } = await supabaseClient.rpc('room_snapshot', { p_code: room.code });
+      const t1 = Date.now();
+      if (error) {
+        if (String(error.message || '').includes('not_a_member')) roomForget('You are no longer in that room.');
+        else throw error;
+        return;
+      }
+      // Corrects for this computer's clock being off, so everyone's live counters agree
+      room.skew = Number(data.server_now_ms) - (t0 + t1) / 2;
+      room.target = Number(data.target_hours) || 0;
+      room.members = Array.isArray(data.members) ? data.members : [];
+      roomBuild();
+      roomTick();
+    } catch (e) {
+      console.warn('Room sync failed', e);
+      roomEls.note.textContent = 'Reconnecting… (have you run supabase-multiplayer.sql?)';
+    } finally {
+      room.fetching = false;
+      if (room.refetch) { room.refetch = false; roomQueueFetch(); }
+    }
+  }
+  function roomQueueFetch() {
+    clearTimeout(room.fetchTimer);
+    room.fetchTimer = setTimeout(roomFetch, 120);
+  }
+
+  function roomBuild() {
+    roomEls.members.textContent = '';
+    room.rows = room.members.map(m => {
+      const el = document.createElement('div');
+      el.className = 'room-member';
+      const top = document.createElement('div');
+      top.className = 'room-member-top';
+      const name = document.createElement('span');
+      name.className = 'room-name';
+      name.textContent = String(m.name || 'Student') + (m.is_me ? ' (you)' : '');
+      const time = document.createElement('span');
+      time.className = 'room-time';
+      time.textContent = '00:00:00';
+      top.append(name, time);
+      const status = document.createElement('div');
+      status.className = 'room-status';
+      const dot = document.createElement('span');
+      dot.className = 'room-dot';
+      const label = document.createElement('span');
+      status.append(dot, label);
+      const bar = document.createElement('div');
+      bar.className = 'room-bar';
+      const fill = document.createElement('div');
+      bar.append(fill);
+      el.append(top, status, bar);
+      roomEls.members.append(el);
+      return { m, el, time, label, bar, fill };
+    });
+  }
+
+  function roomView(m, nowSrv) {
+    if (m.is_me) return { status: roomMyStatus(), ms: liveTodayMs() };
+    const age = nowSrv - Number(m.updated_ms);
+    let status = m.status;
+    let ms = Number(m.elapsed_ms) || 0;
+    if (status === 'studying') {
+      if (age > ROOM_STALE_MS) status = 'offline';
+      else ms += Math.max(0, age);
+    }
+    return { status, ms };
+  }
+
+  function roomTick() {
+    if (!room.code) return;
+    const nowSrv = Date.now() + room.skew;
+    const targetMs = room.target * 3600000;
+    room.rows.forEach(r => {
+      const v = roomView(r.m, nowSrv);
+      r.time.textContent = formatTime(v.ms).slice(0, -2);
+      r.label.textContent = { studying: 'Studying', paused: 'Paused', idle: 'Not started', offline: 'Offline' }[v.status] || '';
+      r.el.classList.toggle('studying', v.status === 'studying');
+      r.el.classList.toggle('paused', v.status === 'paused');
+      r.el.classList.toggle('offline', v.status === 'offline');
+      const hasTarget = targetMs > 0;
+      r.bar.classList.toggle('hidden', !hasTarget);
+      if (hasTarget) {
+        const pct = Math.min(100, (v.ms / targetMs) * 100);
+        r.fill.style.width = pct + '%';
+        r.el.classList.toggle('done', pct >= 100);
+        if (pct >= 100) r.label.textContent += ' · target reached';
+      }
+    });
+    const parts = [];
+    if (room.target > 0) parts.push('Target: ' + room.target + 'h each');
+    if (room.members.length < 2) parts.push('Waiting for friends — share the code ' + room.code);
+    roomEls.note.textContent = parts.join(' · ');
+    roomEls.note.classList.toggle('hidden', !parts.length);
+  }
+
+  function roomShow() {
+    roomEls.widget.classList.remove('hidden');
+    roomEls.widgetCode.textContent = room.code;
+    clearInterval(room.pollTimer);
+    clearInterval(room.tickTimer);
+    room.pollTimer = setInterval(roomFetch, ROOM_POLL_MS);
+    room.tickTimer = setInterval(() => { if (!document.hidden) roomTick(); }, 200);
+    if (room.channel) { supabaseClient.removeChannel(room.channel); room.channel = null; }
+    room.channel = supabaseClient.channel('stack-room-' + room.code)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_members', filter: 'room_code=eq.' + room.code }, roomQueueFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'study_rooms', filter: 'code=eq.' + room.code }, roomQueueFetch)
+      .subscribe();
+  }
+
+  // Stop showing/syncing the room on this device (does not leave it)
+  function roomStop() {
+    clearInterval(room.pollTimer);
+    clearInterval(room.tickTimer);
+    clearTimeout(room.pushTimer);
+    clearTimeout(room.fetchTimer);
+    if (room.channel && supabaseClient) { supabaseClient.removeChannel(room.channel); }
+    room.channel = null;
+    room.code = '';
+    room.members = [];
+    room.rows = [];
+    roomEls.members.textContent = '';
+    roomEls.widget.classList.add('hidden');
+  }
+
+  function roomForget(message) {
+    roomStop();
+    roomStore('stackRoomCode', null);
+    roomSetStep();
+    roomEls.message.textContent = message || '';
+  }
+
+  function roomEnter(code) {
+    room.code = code;
+    roomStore('stackRoomCode', code);
+    roomShow();
+    roomFetch();
+    roomPushNow();
+    roomSetStep();
+  }
+
+  // Re-join the room remembered on this device once we know who is signed in
+  function roomResume() {
+    const saved = roomStore('stackRoomCode');
+    if (!saved || !cloudUser || room.code === saved) return;
+    room.code = saved;
+    roomShow();
+    roomFetch();
+    roomPushNow();
+    roomSetStep();
+  }
+
+  function roomResync() {
+    if (!room.code) return;
+    roomFetch();
+    roomPushNow();
+  }
+
+  function roomSetStep() {
+    const inRoom = Boolean(room.code);
+    roomEls.stepStart.classList.toggle('hidden', inRoom);
+    roomEls.stepIn.classList.toggle('hidden', !inRoom);
+    roomEls.bigCode.textContent = room.code;
+    roomEls.subtitle.textContent = inRoom
+      ? 'You are in a room. Friends see your time live.'
+      : 'Up to 5 people. See each other’s study time live.';
+    if (inRoom) roomEls.targetEdit.value = room.target || '';
+  }
+
+  function roomOpenOverlay() {
+    settingsPanel.classList.remove('open');
+    if (!supabaseClient) { alert('Study Together could not load. Check your connection and refresh.'); return; }
+    if (!cloudUser) {
+      openAuthOverlay('signup');
+      authSubtitle.textContent = 'Create a free account (or sign in) to study together with friends.';
+      return;
+    }
+    if (!roomEls.name.value) {
+      roomEls.name.value = roomStore('stackRoomName') || String(cloudUser.email || '').split('@')[0].slice(0, 24);
+    }
+    roomEls.message.textContent = '';
+    roomSetStep();
+    roomEls.overlay.classList.add('open');
+  }
+
+  function roomError(error) {
+    const msg = String((error && error.message) || error || '');
+    if (/function .* does not exist|schema cache|relation .* does not exist/i.test(msg)) {
+      return 'Rooms are not set up yet: run supabase-multiplayer.sql in Supabase, then try again.';
+    }
+    return msg || 'Something went wrong. Please try again.';
+  }
+
+  async function roomRun(button, busyText, work) {
+    const label = button.textContent;
+    button.disabled = true;
+    button.textContent = busyText;
+    roomEls.message.textContent = '';
+    try { await work(); }
+    catch (e) { roomEls.message.textContent = roomError(e); }
+    finally { button.disabled = false; button.textContent = label; }
+  }
+
+  roomEls.openBtn.addEventListener('click', roomOpenOverlay);
+  roomEls.manageBtn.addEventListener('click', roomOpenOverlay);
+  roomEls.closeBtn.addEventListener('click', () => roomEls.overlay.classList.remove('open'));
+
+  roomEls.createBtn.addEventListener('click', () => roomRun(roomEls.createBtn, 'Creating…', async () => {
+    const name = roomEls.name.value.trim();
+    roomStore('stackRoomName', name);
+    const { data, error } = await supabaseClient.rpc('create_room', {
+      p_name: name, p_target: Number(roomEls.targetNew.value) || 0
+    });
+    if (error) throw error;
+    roomEnter(String(data));
+  }));
+
+  roomEls.joinBtn.addEventListener('click', () => roomRun(roomEls.joinBtn, 'Joining…', async () => {
+    const code = roomEls.codeInput.value.trim().toUpperCase();
+    if (!/^[A-Z0-9]{6}$/.test(code)) throw new Error('Enter the 6-character room code.');
+    const name = roomEls.name.value.trim();
+    roomStore('stackRoomName', name);
+    const { data, error } = await supabaseClient.rpc('join_room', { p_code: code, p_name: name });
+    if (error) throw error;
+    roomEnter(String(data));
+    roomEls.overlay.classList.remove('open');
+  }));
+
+  roomEls.codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') roomEls.joinBtn.click(); });
+
+  roomEls.targetSaveBtn.addEventListener('click', () => roomRun(roomEls.targetSaveBtn, 'Saving…', async () => {
+    const { error } = await supabaseClient.rpc('set_room_target', { p_code: room.code, p_hours: Number(roomEls.targetEdit.value) || 0 });
+    if (error) throw error;
+    await roomFetch();
+    roomEls.message.textContent = 'Target saved for everyone in the room.';
+  }));
+
+  roomEls.leaveBtn.addEventListener('click', () => roomRun(roomEls.leaveBtn, 'Leaving…', async () => {
+    const { error } = await supabaseClient.rpc('leave_all_rooms');
+    if (error) throw error;
+    roomForget('');
+  }));
+
+  roomEls.copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(room.code);
+      roomEls.copyBtn.textContent = 'Copied!';
+    } catch (e) { roomEls.copyBtn.textContent = 'Select the code to copy'; }
+    setTimeout(() => { roomEls.copyBtn.textContent = 'Copy code'; }, 1500);
   });
 
   function setupPointerInteractions() {
@@ -2349,6 +2806,7 @@
     supabaseClient.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         cloudUser = null;
+        roomStop();
         setCloudSyncEnabled(false);
         localStorage.removeItem('stackCloudUserId');
         updateAccountUI('Signed out — progress remains on this device');
@@ -2360,6 +2818,7 @@
         if (userChanged || event === 'INITIAL_SESSION') {
           updateAccountUI('Signed in — choosing progress…');
           setTimeout(() => prepareCloudProgress(), 0);
+          setTimeout(() => roomResume(), 0);
         }
       }
     });
