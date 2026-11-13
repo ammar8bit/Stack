@@ -22,8 +22,7 @@ function sanitizeSnapshot(raw) {
     totalMs: num(raw.totalMs), todayMs: num(raw.todayMs),
     lastStudyDate: typeof raw.lastStudyDate === 'string' ? raw.lastStudyDate.slice(0, 10) : '',
     hasGoal: flag(raw.hasGoal),
-    dailyGoalHours: typeof raw.dailyGoalHours === 'number' && isFinite(raw.dailyGoalHours) ? raw.dailyGoalHours : null,
-    inRoom: flag(raw.inRoom)
+    dailyGoalHours: typeof raw.dailyGoalHours === 'number' && isFinite(raw.dailyGoalHours) ? raw.dailyGoalHours : null
   };
 }
 

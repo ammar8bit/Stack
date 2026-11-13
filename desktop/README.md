@@ -92,6 +92,10 @@ desktop/
   and Start/Pause from the tray, mini view or a hotkey is routed back to the page. Nothing counts
   ticks, so there is no drift after sleep or hours in the tray. `backgroundThrottling` is off so
   the hidden page keeps saving heartbeats and finishing countdowns on time.
+- **Painting follows the window.** With throttling off, Chromium would keep painting at 60 frames a
+  second in the tray. `bridge.js` holds animation frames and pauses CSS animations while the window
+  is hidden or minimised (about 1% CPU), and drops to a few frames a second while it is visible but
+  unfocused. Timers, saving and sync are never slowed; the tray and mini view do not depend on it.
 - **Sleep.** Time spent asleep counts the same way it does on the website: the timer is wall-clock
   based, and if the machine was away for more than 3 hours the session is paused at the last moment
   the app was alive (the website's existing "stale timer" rule).
@@ -172,3 +176,19 @@ To switch it on with GitHub Releases:
 `test/harness.js` is loaded only in a development run when `STACKTIME_TEST_PORT` is set. It exposes
 a local control port so a script can click tray items, hide windows, take screenshots and switch
 the app offline (`node test/ctl.js status`). It is not included in packaged builds.
+
+`test/e2e.js` drives a development run through the harness. Start the app with a mock cloud and a
+throwaway profile (PowerShell):
+
+```powershell
+$env:STACKTIME_TEST_PORT='47821'; $env:STACKTIME_TEST_MOCK='1'; $env:STACKTIME_USER_DATA="$env:TEMP\stacktime-e2e"; npx electron .
+```
+
+Then, from a second terminal in `desktop/`:
+
+```bash
+node test/e2e.js signin offline conflict remote oauth notify sleep presence
+```
+
+Use a fresh `STACKTIME_USER_DATA` folder for each full run: `signin` expects a device with no
+progress yet.

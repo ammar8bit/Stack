@@ -81,6 +81,11 @@ function createWindows(ctx) {
     });
     main.on('show', () => ctx.onMainShown());
     main.on('restore', () => ctx.onMainShown());
+    // These events fire before isVisible()/isFocused() settle, so pass what just happened
+    main.on('hide', () => ctx.onMainPresence({ visible: false }));
+    main.on('minimize', () => ctx.onMainPresence({ visible: false }));
+    main.on('focus', () => ctx.onMainPresence({ focused: true }));
+    main.on('blur', () => ctx.onMainPresence({ focused: false }));
     main.on('closed', () => { main = null; });
     main.webContents.on('render-process-gone', (event, details) => {
       ctx.log('Main renderer gone (' + details.reason + '), reloading');
@@ -152,8 +157,11 @@ function createWindows(ctx) {
     if (visible) {
       if (!mini || mini.isDestroyed()) createMini();
       // showInactive: popping up the mini view must not steal focus from what the user is doing
-      if (mini.webContents.isLoading()) mini.webContents.once('did-finish-load', () => mini && mini.showInactive());
-      else mini.showInactive();
+      if (mini.webContents.isLoading()) {
+        mini.webContents.once('did-finish-load', () => { if (mini && !mini.isDestroyed() && config.get('miniVisible')) mini.showInactive(); });
+      } else {
+        mini.showInactive();
+      }
     } else if (mini && !mini.isDestroyed()) {
       mini.hide();
     }

@@ -185,6 +185,56 @@ const scenarios = {
     view = (await call('status')).view;
     check('4 h asleep: paused at the last moment the app was alive', view.status === 'paused' && view.time === '01:00:00', view.time);
     await click('resetBtn');
+  },
+
+  // Painting follows the window: none while hidden, slow while unfocused, full speed when focused.
+  // The timer itself must not notice any of this.
+  async presence() {
+    const frames = () => page(`new Promise(done => {
+      let n = 0, live = true;
+      const tick = () => { if (!live) return; n++; requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+      setTimeout(() => { live = false; done(n); }, 1000);
+    })`);
+    const classes = () => page(`document.documentElement.className`);
+    await page(`document.querySelector('.mode-btn[data-mode="session"]').click(); true`);
+    await click('startBtn');
+    await call('window', { op: 'show' });
+    await call('window', { op: 'focus' });
+    await sleep(500);
+    const focusedFrames = await frames();
+    check('focused: full frame rate', focusedFrames >= 30, focusedFrames);
+
+    await call('window', { op: 'hide' });
+    await sleep(500);
+    check('hidden: page marked hidden', /stacktime-hidden/.test(await classes()), await classes());
+    const hiddenFrames = await frames();
+    check('hidden: no frames painted', hiddenFrames === 0, hiddenFrames);
+    const tooltipA = (await call('status')).view.time;
+    await sleep(2200);
+    const hiddenView = (await call('status')).view;
+    check('hidden: timer keeps counting', hiddenView.status === 'running' && hiddenView.time !== tooltipA, [tooltipA, hiddenView.time]);
+
+    await call('window', { op: 'show' });
+    await call('window', { op: 'focus' });
+    await sleep(600);
+    check('shown again: hidden mark cleared', !/stacktime-(hidden|unfocused)/.test(await classes()), await classes());
+    const shown = await page(`document.getElementById('timerDisplay').textContent`);
+    const tray = (await call('status')).view.time;
+    const secs = t => t.split(':').reduce((a, b) => a * 60 + Number(b), 0);
+    check('shown again: display caught up with the tray', Math.abs(secs(shown) - secs(tray)) <= 1, [shown, tray]);
+    const backFrames = await frames();
+    check('shown again: full frame rate', backFrames >= 30, backFrames);
+
+    await call('window', { op: 'minimize' });
+    await sleep(500);
+    check('minimised: page marked hidden', /stacktime-hidden/.test(await classes()), await classes());
+    await call('window', { op: 'restore' });
+    await call('window', { op: 'focus' });
+    await sleep(500);
+    check('restored: hidden mark cleared', !/stacktime-hidden/.test(await classes()), await classes());
+
+    await click('resetBtn');
   }
 };
 

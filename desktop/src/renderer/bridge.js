@@ -17,9 +17,10 @@
   };
 
   // "Online" needs more than navigator.onLine, which stays true on Wi-Fi with no internet. Every
-  // request the page makes goes through here: a network-level failure marks the cloud unreachable,
-  // any HTTP response (even an error status) marks it reachable again.
+  // request to the StackTime backend goes through here: a network-level failure marks the cloud
+  // unreachable, any HTTP response (even an error status) marks it reachable again.
   let reachable = true;
+  let cloudUrl = '';
   let onConnectivity = () => {};
   const online = () => navigator.onLine && reachable;
   function setReachable(value) {
@@ -29,6 +30,8 @@
   }
   const nativeFetch = window.fetch.bind(window);
   window.fetch = async function (...args) {
+    const url = String((args[0] && args[0].url) || args[0] || '');
+    if (!cloudUrl || !url.startsWith(cloudUrl)) return nativeFetch(...args);
     try {
       const response = await nativeFetch(...args);
       setReachable(true);
@@ -39,11 +42,70 @@
     }
   };
 
+  // Background throttling is off so timers stay exact while the window sits in the tray, but that
+  // also keeps Chromium painting 60 frames a second for a window nobody is looking at (measured:
+  // about 1.5 CPU cores). So the page's painting follows the window:
+  //   hidden or minimised - animation frames are held and CSS animations paused
+  //   visible, not focused - a few frames a second, decorative animations rest
+  //   focused              - untouched, exactly like the website
+  // Timers, saving and the network are never slowed; the tray and mini view do not depend on this.
+  const SLOW_FRAME_MS = 200;
+  let visible = true;
+  let focused = true;
+  const nativeRaf = window.requestAnimationFrame.bind(window);
+  const nativeCancel = window.cancelAnimationFrame.bind(window);
+  const frames = new Map(); // our (negative) id -> { callback, timer, native }
+  let nextFrameId = -1;
+  function releaseFrame(id) {
+    const frame = frames.get(id);
+    frame.native = nativeRaf((time) => { frames.delete(id); frame.callback(time); });
+  }
+  function planFrame(id) {
+    const frame = frames.get(id);
+    if (!visible) return; // held until the window is shown again
+    if (focused) { releaseFrame(id); return; }
+    frame.timer = setTimeout(() => { frame.timer = null; if (visible) releaseFrame(id); }, SLOW_FRAME_MS);
+  }
+  window.requestAnimationFrame = (callback) => {
+    if (visible && focused) return nativeRaf(callback);
+    const id = nextFrameId--;
+    frames.set(id, { callback, timer: null, native: null });
+    planFrame(id);
+    return id;
+  };
+  window.cancelAnimationFrame = (id) => {
+    if (!(id < 0)) { nativeCancel(id); return; }
+    const frame = frames.get(id);
+    if (!frame) return;
+    if (frame.timer) clearTimeout(frame.timer);
+    if (frame.native !== null) nativeCancel(frame.native);
+    frames.delete(id);
+  };
+  const pauseStyle = document.createElement('style');
+  pauseStyle.textContent = '.stacktime-hidden *, .stacktime-hidden *::before, .stacktime-hidden *::after'
+    + '{animation-play-state:paused !important}'
+    + '.stacktime-unfocused .ambient *, .stacktime-unfocused .together-dot, .stacktime-unfocused .rv-dot'
+    + '{animation-play-state:paused !important}';
+  document.head.appendChild(pauseStyle);
+  function setPresence(nowVisible, nowFocused) {
+    visible = Boolean(nowVisible);
+    focused = Boolean(nowFocused);
+    document.documentElement.classList.toggle('stacktime-hidden', !visible);
+    document.documentElement.classList.toggle('stacktime-unfocused', !focused);
+    if (!visible) return;
+    frames.forEach((frame, id) => {
+      if (frame.native !== null) return;
+      if (frame.timer && focused) { clearTimeout(frame.timer); frame.timer = null; }
+      if (!frame.timer) planFrame(id);
+    });
+  }
+
   window.stacktimeDesktopAttach = function (app) {
     const today = () => app.getTodayStr();
     const state = () => app.getState();
     const syncOn = () => store.get('stackCloudSyncEnabled') === 'true';
     const userId = () => store.get('stackCloudUserId') || '';
+    if (app.supabase) cloudUrl = app.supabase.supabaseUrl;
 
     // ---- 1. publish the timer state to the main process (tray, mini view, hotkeys) ----
     let publishQueued = false;
@@ -54,8 +116,7 @@
         publishQueued = false;
         const s = state();
         host.publishState(Object.assign({}, app.buildPayload(), {
-          dailyGoalHours: s.hasGoal ? app.getDailyGoalHours() : null,
-          inRoom: Boolean(app.getRoomCode())
+          dailyGoalHours: s.hasGoal ? app.getDailyGoalHours() : null
         }));
       });
     }
@@ -139,10 +200,16 @@
       });
     }
 
+    // A question about one account must not survive signing out or switching to another account
+    function dropStaleConflict() {
+      if (conflict && (!syncOn() || !meta.base || meta.base.uid !== userId())) conflict = null;
+    }
+
     // Called by the page with the cloud copy before it would adopt it or overwrite it.
     // true = "do nothing yet, the user is being asked".
     function holdRemote(remote) {
       lastCloudCheck = Date.now();
+      dropStaleConflict();
       if (conflict) {
         if (remote) conflict = remote;
         if (!conflictDismissed && !byId('cloudChoiceOverlay').classList.contains('open')) showConflict(conflict);
@@ -172,6 +239,7 @@
       }, delay || 400);
     }
     function interceptSave() {
+      dropStaleConflict();
       if (conflict) return true;
       if (!online()) {
         if (!meta.dirty) { meta.dirty = true; saveMeta(); }
@@ -271,10 +339,10 @@
       renderStatus();
       if (app.getRoomCode()) app.roomSys('You are offline. Your time keeps counting and updates when you reconnect.', true);
     };
-    // Any HTTP answer from the project proves the connection is back
+    // Any answer at all from the project proves the connection is back (no-cors: the reply itself is not read)
     function probe() {
       if (!app.supabase || !navigator.onLine || reachable) return;
-      window.fetch(app.supabase.supabaseUrl + '/auth/v1/health', { cache: 'no-store' }).catch(() => {});
+      window.fetch(app.supabase.supabaseUrl + '/auth/v1/health', { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
     }
     window.addEventListener('online', () => { onConnectivity(); probe(); });
     window.addEventListener('offline', onConnectivity);
@@ -324,6 +392,7 @@
       if (!command || typeof command !== 'object') return;
       if (command.type === 'toggle') toggleTimer();
       else if (command.type === 'resync') resync();
+      else if (command.type === 'presence') setPresence(command.visible, command.focused);
       else if (command.type === 'auth-callback') finishOAuth(command);
     });
 

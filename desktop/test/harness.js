@@ -65,6 +65,12 @@ module.exports = function startHarness(ctx, extra) {
       return true;
     },
     openSettings() { ctx.windows.openSettings(); return true; },
+    key({ target, keyCode, modifiers }) {
+      const contents = win(target || 'main').webContents;
+      contents.sendInputEvent({ type: 'keyDown', keyCode, modifiers: modifiers || [] });
+      contents.sendInputEvent({ type: 'keyUp', keyCode, modifiers: modifiers || [] });
+      return true;
+    },
     quit() { setTimeout(() => ctx.actions.quit(), 50); return true; }
   };
 

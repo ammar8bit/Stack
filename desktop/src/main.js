@@ -148,7 +148,15 @@ function start() {
     quit: () => { ctx.quitting = true; app.quit(); }
   };
   ctx.pushMini = pushMini;
-  ctx.onMainShown = () => sendCommand({ type: 'resync' });
+  // Tells the page whether anyone is looking, so it can stop painting while it sits in the tray
+  ctx.onMainPresence = (hint) => {
+    const main = ctx.windows.main;
+    if (!main) return;
+    const visible = hint && hint.visible !== undefined ? hint.visible : main.isVisible() && !main.isMinimized();
+    const focused = hint && hint.focused !== undefined ? hint.focused : main.isFocused();
+    sendCommand({ type: 'presence', visible, focused: visible && focused });
+  };
+  ctx.onMainShown = () => { ctx.onMainPresence(); sendCommand({ type: 'resync' }); };
   ctx.onMiniChanged = () => { lastMiniKey = ''; if (ctx.tray) ctx.tray.refreshMenu(); refresh(); };
   ctx.onMainHidden = () => {
     if (ctx.config.get('trayHintShown')) return;
@@ -184,6 +192,7 @@ function start() {
   ipcMain.on('desktop:ready', (event) => {
     if (!from(event, 'main')) return;
     ctx.rendererReady = true;
+    ctx.onMainPresence();
     ctx.pendingCommands.splice(0).forEach(sendCommand);
   });
   ipcMain.on('desktop:state', (event, snapshot) => {
